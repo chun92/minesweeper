@@ -1,6 +1,4 @@
 use bevy::prelude::*;
-use bevy::utils::HashSet;
-use rand::seq::SliceRandom;
 
 use super::grid::Grid;
 use super::grid::TotalMine;
@@ -39,79 +37,19 @@ fn spawn_cell(
     ));
 }
 
-fn get_num_mines_around(x: u32, y: u32, width: u32, height: u32, mine_positions: &HashSet<(u32, u32)>) -> u32 {
-    let mut num_mines_around = 0;
-    // 1 2 3
-    // 4 x 5
-    // 6 7 8
-
-    // case 1
-    if x > 1 && y > 1 && mine_positions.contains(&(x - 1, y - 1)) {
-        num_mines_around += 1;
-    }
-    // case 2
-    if y > 1 && mine_positions.contains(&(x, y - 1)) {
-        num_mines_around += 1;
-    }
-    // case 3
-    if x < width && y > 1 && mine_positions.contains(&(x + 1, y - 1)) {
-        num_mines_around += 1;
-    }
-    // case 4
-    if x > 1 && mine_positions.contains(&(x - 1, y)) {
-        num_mines_around += 1;
-    }
-    // case 5
-    if x < width && mine_positions.contains(&(x + 1, y)) {
-        num_mines_around += 1;
-    }
-    // case 6
-    if x > 1 && y < height && mine_positions.contains(&(x - 1, y + 1)) {
-        num_mines_around += 1;
-    }
-    // case 7
-    if y < height && mine_positions.contains(&(x, y + 1)) {
-        num_mines_around += 1;
-    }
-    // case 8
-    if x < width && y < height && mine_positions.contains(&(x + 1, y + 1)) {
-        num_mines_around += 1;
-    }
-
-    num_mines_around
-}
-
 pub fn spawn_cells(
     mut commands: Commands,
     mines: Res<TotalMine>,
-    grid: Res<Grid>,
+    mut grid: ResMut<Grid>,
     texture_atlas_resource: Res<asset::loader::TextureAtlasResource>,
 ) {
-    let mine_positions = create_mine_positions(grid.width, grid.height, mines.0);
+    grid.create_mine_positions(mines.0);
+    let mine_positions = &grid.mine_positions;
     for x in 1..=grid.width {
         for y in 1..=grid.height {
             let is_mine = mine_positions.contains(&(x, y));
-            let num_mines_around = get_num_mines_around(x, y, grid.width, grid.height, &mine_positions);
+            let num_mines_around = grid.get_num_mines_around(x, y);
             spawn_cell(&mut commands, Cell::new(x, y, is_mine, num_mines_around), &grid, &texture_atlas_resource);
         }
     }
-}
-
-fn create_mine_positions(grid_width: u32, grid_height: u32, num_mines: u32) -> HashSet<(u32, u32)> {
-    let mut rng = rand::thread_rng();
-    
-    let num_mines = if num_mines > grid_width * grid_height {
-        grid_width * grid_height
-    } else {
-        num_mines
-    };
-
-    // Create a vector with all possible positions
-    let mut positions: Vec<(u32, u32)> = (1..=grid_width)
-        .flat_map(|x| (1..=grid_height).map(move |y| (x, y)))
-        .collect();
-
-    positions.shuffle(&mut rng);
-
-    positions.into_iter().take(num_mines as usize).collect::<HashSet<_>>()
 }
