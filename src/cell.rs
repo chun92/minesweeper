@@ -6,11 +6,12 @@ use super::asset;
 pub struct Cell {
     pub x: u32,
     pub y: u32,
+    pub is_mine: bool,
 }
 
 impl Cell {
-    pub fn new(x: u32, y: u32) -> Self {
-        Self { x, y }
+    pub fn new(x: u32, y: u32, is_mine: bool) -> Self {
+        Self { x, y, is_mine }
     }
 
     pub fn get_position(&self, grid: &Grid) -> Vec3 {
@@ -19,8 +20,8 @@ impl Cell {
         assert!(self.x > 0);
         assert!(self.y > 0);
 
-        let width_pixel = asset::texture_type::TextureAtlasType::Bombs.get_cell_size().0;
-        let height_pixel = asset::texture_type::TextureAtlasType::Bombs.get_cell_size().1;
+        let width_pixel = asset::texture_type::TextureAtlasType::Cells.get_cell_size().0;
+        let height_pixel = asset::texture_type::TextureAtlasType::Cells.get_cell_size().1;
         let x_offset = grid.width as f32 * width_pixel / 2.0;
         let y_offset = grid.height as f32 * height_pixel / 2.0;
         let x = (self.x - 1) as f32 * width_pixel + width_pixel / 2.0 - x_offset;

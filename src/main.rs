@@ -16,6 +16,8 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .init_resource::<asset::loader::TextureAtlasResource>()
         .init_resource::<grid::Grid>()
+        .init_resource::<grid::TotalMine>()
+        .init_resource::<grid::RemainingMine>()
         .add_systems(Startup, asset::loader::setup)
         .add_systems(PostStartup, spawn::spawn_camera)
         .add_systems(PostStartup, spawn::spawn_cells)

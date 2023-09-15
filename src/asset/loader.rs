@@ -88,8 +88,7 @@ pub fn setup(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut texture_atlas_resource: ResMut<TextureAtlasResource>,
 ) {
-    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureAtlasType::Bombs);
-    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureAtlasType::Times);
+    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureAtlasType::Cells);
     load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureAtlasType::Smiles);
-    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureAtlasType::Numbers);
+    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureAtlasType::Times);
 }
