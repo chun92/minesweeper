@@ -20,11 +20,16 @@ fn spawn_cell(
 ) {
     let position = cell.get_position(grid);
     let texture_atlas_handle = texture_atlas_resource.handles.get(&asset::texture_type::TextureAtlasType::Cells).unwrap();
+    let index = if cell.is_mine {
+        asset::texture_type::CellType::Mine as u32
+    } else {
+        asset::texture_type::CellType::get_revealed_num(cell.num_mines_around) as u32
+    };
     commands.spawn((
         cell,
         SpriteSheetBundle {
             texture_atlas: texture_atlas_handle.clone(),
-            sprite: TextureAtlasSprite::new(0),
+            sprite: TextureAtlasSprite::new(index as usize),
             transform: Transform {
                 translation: position,
                 ..default()
@@ -32,6 +37,48 @@ fn spawn_cell(
             ..default()
         }
     ));
+}
+
+fn get_num_mines_around(x: u32, y: u32, width: u32, height: u32, mine_positions: &HashSet<(u32, u32)>) -> u32 {
+    let mut num_mines_around = 0;
+    // 1 2 3
+    // 4 x 5
+    // 6 7 8
+
+    // case 1
+    if x > 1 && y > 1 && mine_positions.contains(&(x - 1, y - 1)) {
+        num_mines_around += 1;
+    }
+    // case 2
+    if y > 1 && mine_positions.contains(&(x, y - 1)) {
+        num_mines_around += 1;
+    }
+    // case 3
+    if x < width && y > 1 && mine_positions.contains(&(x + 1, y - 1)) {
+        num_mines_around += 1;
+    }
+    // case 4
+    if x > 1 && mine_positions.contains(&(x - 1, y)) {
+        num_mines_around += 1;
+    }
+    // case 5
+    if x < width && mine_positions.contains(&(x + 1, y)) {
+        num_mines_around += 1;
+    }
+    // case 6
+    if x > 1 && y < height && mine_positions.contains(&(x - 1, y + 1)) {
+        num_mines_around += 1;
+    }
+    // case 7
+    if y < height && mine_positions.contains(&(x, y + 1)) {
+        num_mines_around += 1;
+    }
+    // case 8
+    if x < width && y < height && mine_positions.contains(&(x + 1, y + 1)) {
+        num_mines_around += 1;
+    }
+
+    num_mines_around
 }
 
 pub fn spawn_cells(
@@ -44,7 +91,8 @@ pub fn spawn_cells(
     for x in 1..=grid.width {
         for y in 1..=grid.height {
             let is_mine = mine_positions.contains(&(x, y));
-            spawn_cell(&mut commands, Cell::new(x, y, is_mine), &grid, &texture_atlas_resource);
+            let num_mines_around = get_num_mines_around(x, y, grid.width, grid.height, &mine_positions);
+            spawn_cell(&mut commands, Cell::new(x, y, is_mine, num_mines_around), &grid, &texture_atlas_resource);
         }
     }
 }

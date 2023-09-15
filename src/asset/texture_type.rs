@@ -41,3 +41,20 @@ pub enum CellType {
     Revealed7 = 14,
     Revealed8 = 15,
 }
+
+impl CellType {
+    pub fn get_revealed_num(num: u32) -> Self {
+        match num {
+            0 => CellType::Revealed,
+            1 => CellType::Revealed1,
+            2 => CellType::Revealed2,
+            3 => CellType::Revealed3,
+            4 => CellType::Revealed4,
+            5 => CellType::Revealed5,
+            6 => CellType::Revealed6,
+            7 => CellType::Revealed7,
+            8 => CellType::Revealed8,
+            _ => panic!("Invalid revealed num: {}", num),
+        }
+    }
+}

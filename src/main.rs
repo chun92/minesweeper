@@ -7,7 +7,7 @@ pub mod asset {
 
 pub mod grid;
 pub mod cell;
-pub mod spawn;
+pub mod system;
 
 fn main() {
     std::env::set_var("RUST_BACKTRACE", "1");
@@ -19,7 +19,7 @@ fn main() {
         .init_resource::<grid::TotalMine>()
         .init_resource::<grid::RemainingMine>()
         .add_systems(Startup, asset::loader::setup)
-        .add_systems(PostStartup, spawn::spawn_camera)
-        .add_systems(PostStartup, spawn::spawn_cells)
+        .add_systems(PostStartup, system::spawn_camera)
+        .add_systems(PostStartup, system::spawn_cells)
         .run();
 }

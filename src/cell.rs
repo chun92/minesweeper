@@ -7,11 +7,12 @@ pub struct Cell {
     pub x: u32,
     pub y: u32,
     pub is_mine: bool,
+    pub num_mines_around: u32,
 }
 
 impl Cell {
-    pub fn new(x: u32, y: u32, is_mine: bool) -> Self {
-        Self { x, y, is_mine }
+    pub fn new(x: u32, y: u32, is_mine: bool, num_mines_around: u32) -> Self {
+        Self { x, y, is_mine, num_mines_around }
     }
 
     pub fn get_position(&self, grid: &Grid) -> Vec3 {
