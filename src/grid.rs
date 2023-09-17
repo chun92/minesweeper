@@ -45,7 +45,7 @@ impl Grid {
         let grid_width = cell_width * self.width as f32;
         let grid_height = cell_height * self.height as f32;
     
-        self.window_position = Vec2::new(window_width / 2.0 - grid_width / 2.0, window_height / 2.0 - grid_height / 2.0);
+        self.window_position = Vec2::new(window_width / 2.0, window_height / 2.0);
         self.window_size = Vec2::new(grid_width, grid_height);
     }
 
@@ -68,49 +68,60 @@ impl Grid {
         self.mine_positions = positions.into_iter().take(num_mines as usize).collect::<HashSet<_>>()
     }
 
-    pub fn get_num_mines_around(&self, x: u32, y: u32) -> u32 {
+    pub fn get_arround_cells(&self, x: u32, y: u32) -> Vec<(u32, u32)> {
         let width = self.width;
         let height = self.height;
-        let mine_positions = &self.mine_positions;
 
-        let mut num_mines_around = 0;
+        let mut cells = Vec::new();
         // 1 2 3
         // 4 x 5
         // 6 7 8
 
         // case 1
-        if x > 1 && y > 1 && mine_positions.contains(&(x - 1, y - 1)) {
-            num_mines_around += 1;
+        if x > 1 && y > 1 {
+            cells.push((x - 1, y - 1));
         }
         // case 2
-        if y > 1 && mine_positions.contains(&(x, y - 1)) {
-            num_mines_around += 1;
+        if y > 1 {
+            cells.push((x, y - 1));
         }
         // case 3
-        if x < width && y > 1 && mine_positions.contains(&(x + 1, y - 1)) {
-            num_mines_around += 1;
+        if x < width && y > 1 {
+            cells.push((x + 1, y - 1));
         }
         // case 4
-        if x > 1 && mine_positions.contains(&(x - 1, y)) {
-            num_mines_around += 1;
+        if x > 1 {
+            cells.push((x - 1, y));
         }
         // case 5
-        if x < width && mine_positions.contains(&(x + 1, y)) {
-            num_mines_around += 1;
+        if x < width {
+            cells.push((x + 1, y));
         }
         // case 6
-        if x > 1 && y < height && mine_positions.contains(&(x - 1, y + 1)) {
-            num_mines_around += 1;
+        if x > 1 && y < height {
+            cells.push((x - 1, y + 1));
         }
         // case 7
-        if y < height && mine_positions.contains(&(x, y + 1)) {
-            num_mines_around += 1;
+        if y < height {
+            cells.push((x, y + 1));
         }
         // case 8
-        if x < width && y < height && mine_positions.contains(&(x + 1, y + 1)) {
-            num_mines_around += 1;
+        if x < width && y < height {
+            cells.push((x + 1, y + 1));
         }
 
+        cells
+    }
+
+    pub fn get_num_mines_around(&self, x: u32, y: u32) -> u32 {
+        let mine_positions = &self.mine_positions;
+        let mut num_mines_around = 0;
+        let arround_cells = self.get_arround_cells(x, y);
+        for (x, y) in arround_cells {
+            if mine_positions.contains(&(x, y)) {
+                num_mines_around += 1;
+            }
+        }
         num_mines_around
     }
 }

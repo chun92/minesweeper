@@ -48,7 +48,10 @@ fn spawn_cell(
                 },
                 ..default()
             },
-            mouse::Clickable(position, width, height),
+            mouse::Clickable(
+                Vec3::new(position.x + grid.window_position.x, position.y + grid.window_position.y, 0.0), 
+                width, 
+                height),
         ));
     });
 }
