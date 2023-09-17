@@ -18,11 +18,16 @@ fn spawn_cell(
 ) {
     let position = cell.get_position(grid);
     let texture_atlas_handle = texture_atlas_resource.handles.get(&asset::texture_type::TextureAtlasType::Cells).unwrap();
-    let index = if cell.is_mine {
-        asset::texture_type::CellType::Mine as u32
+    let index = if cell.is_revealed {
+            if cell.is_mine {
+            asset::texture_type::CellType::Mine as u32
+        } else {
+            asset::texture_type::CellType::get_revealed_num(cell.num_mines_around) as u32
+        }
     } else {
-        asset::texture_type::CellType::get_revealed_num(cell.num_mines_around) as u32
+        asset::texture_type::CellType::Hidden as u32
     };
+    
     commands.spawn((
         cell,
         SpriteSheetBundle {

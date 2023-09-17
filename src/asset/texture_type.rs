@@ -24,7 +24,7 @@ impl TextureAtlasType {
 }
 
 pub enum CellType {
-    Normal = 0,
+    Hidden = 0,
     Revealed = 1,
     Flag = 2,
     Question = 3,
