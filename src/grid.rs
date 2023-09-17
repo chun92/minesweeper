@@ -1,11 +1,15 @@
 use bevy::prelude::*;
-use rand::seq::SliceRandom;
 use bevy::utils::HashSet;
-#[derive(Resource)]
+use rand::seq::SliceRandom;
+
+use super::asset::texture_type::TextureAtlasType;
+#[derive(Component, Clone)]
 pub struct Grid {
     pub width: u32,
     pub height: u32,
     pub mine_positions: HashSet<(u32, u32)>,
+    pub window_position: Vec2,
+    pub window_size: Vec2,
 }
 
 impl Default for Grid {
@@ -14,11 +18,37 @@ impl Default for Grid {
             width: 30,
             height: 16,
             mine_positions: HashSet::new(),
+            window_position: Vec2::new(0.0, 0.0),
+            window_size: Vec2::new(0.0, 0.0),
         }
     }
 }
 
 impl Grid {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn init(
+        &mut self,
+        width: u32,
+        height: u32,
+        window_width: f32,
+        window_height: f32,
+    ) {
+        self.width = width;
+        self.height = height;
+        
+        let cell_width = TextureAtlasType::Cells.get_cell_size().0;
+        let cell_height = TextureAtlasType::Cells.get_cell_size().1;
+    
+        let grid_width = cell_width * self.width as f32;
+        let grid_height = cell_height * self.height as f32;
+    
+        self.window_position = Vec2::new(window_width / 2.0 - grid_width / 2.0, window_height / 2.0 - grid_height / 2.0);
+        self.window_size = Vec2::new(grid_width, grid_height);
+    }
+
     pub fn create_mine_positions(&mut self, num_mines: u32) {
         let mut rng = rand::thread_rng();
         

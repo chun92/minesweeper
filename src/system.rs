@@ -1,10 +1,12 @@
 use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 
 use super::grid::Grid;
 use super::grid::TotalMine;
 use super::grid::RemainingMine;
 use super::cell::Cell;
 use super::asset;
+use super::mouse;
 
 pub fn spawn_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
@@ -28,26 +30,39 @@ fn spawn_cell(
         asset::texture_type::CellType::Hidden as u32
     };
     
+    let width = asset::texture_type::TextureAtlasType::Cells.get_cell_size().0;
+    let height = asset::texture_type::TextureAtlasType::Cells.get_cell_size().1;
+    
     commands.spawn((
-        cell,
-        SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle.clone(),
-            sprite: TextureAtlasSprite::new(index as usize),
-            transform: Transform {
-                translation: position,
+        grid.clone(),
+        SpatialBundle::default()
+    )).with_children(|commands| {
+        commands.spawn((
+            cell,
+            SpriteSheetBundle {
+                texture_atlas: texture_atlas_handle.clone(),
+                sprite: TextureAtlasSprite::new(index as usize),
+                transform: Transform {
+                    translation: position,
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        }
-    ));
+            mouse::Clickable(position, width, height),
+        ));
+    });
 }
 
-pub fn spawn_cells(
+pub fn spawn_grid(
     mut commands: Commands,
     mines: Res<TotalMine>,
-    mut grid: ResMut<Grid>,
+    q_windows: Query<&Window, With<PrimaryWindow>>,
     texture_atlas_resource: Res<asset::loader::TextureAtlasResource>,
 ) {
+    let window_width = q_windows.single().physical_width() as f32;
+    let window_height = q_windows.single().physical_height() as f32;
+    let mut grid = Grid::new();
+    grid.init(30, 16, window_width, window_height);
     grid.create_mine_positions(mines.0);
     let mine_positions = &grid.mine_positions;
     for x in 1..=grid.width {
