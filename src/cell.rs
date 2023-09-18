@@ -2,17 +2,35 @@ use bevy::prelude::*;
 use super::grid::Grid;
 use super::asset;
 
+pub enum CellState {
+    Hidden,
+    Pressed,
+    Revealed,
+    Flagged,
+    WrongFlagged,
+    Exploded,
+}
+
+#[derive(Component, Default)]
+pub struct Cells();
+
+impl Cells {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 #[derive(Component)]
 pub struct Cell {
     pub x: u32,
     pub y: u32,
     pub is_mine: bool,
     pub num_mines_around: u32,
-    pub is_revealed: bool,
-    pub is_flagged: bool,
+    pub state: CellState,
     pub is_left_pressed: bool,
     pub is_right_pressed: bool,
     pub is_both_pressed: bool,
+    pub is_opening: bool,
 }
 
 impl Cell {
@@ -21,11 +39,11 @@ impl Cell {
             y, 
             is_mine, 
             num_mines_around, 
-            is_revealed: false,
-            is_flagged: false,
+            state: CellState::Hidden,
             is_left_pressed: false,
             is_right_pressed: false,
             is_both_pressed: false,
+            is_opening: false,
         }
     }
 
@@ -45,47 +63,144 @@ impl Cell {
     }
 
     pub fn left_pressed(&mut self) {
+        if self.is_left_pressed {
+            return;
+        }
         self.is_left_pressed = true;
-        info!("left pressed: ({}, {})", self.x, self.y);
+        
+        match self.state {
+            CellState::Hidden => {
+                self.state = CellState::Pressed;
+            },
+            _ => {}
+        }
     }
 
     pub fn left_out(&mut self) {
+        if !self.is_left_pressed {
+            return;
+        }
         self.is_left_pressed = false;
-        info!("left out: ({}, {})", self.x, self.y);
+
+        match self.state {
+            CellState::Hidden => {
+                panic!("left out should not be called when cell is hidden");
+            }
+            CellState::Pressed => {
+                self.state = CellState::Hidden;
+            },
+            _ => {}
+        }
     }
 
     pub fn left_released(&mut self) {
+        if !self.is_left_pressed {
+            return;
+        }
         self.is_left_pressed = false;
-        info!("left released: ({}, {})", self.x, self.y);
+
+        match self.state {
+            CellState::Hidden => {
+                panic!("left released should not be called when cell is hidden");
+            },
+            CellState::Pressed => {
+                self.is_opening = true;
+            },
+            _ => {}
+        }
     }
 
     pub fn right_pressed(&mut self) {
+        if self.is_right_pressed {
+            return;
+        }
         self.is_right_pressed = true;
-        info!("right pressed: ({}, {})", self.x, self.y);
+        
+        match self.state {
+            CellState::Hidden => {
+                self.state = CellState::Flagged;
+            },
+            CellState::Flagged => {
+                self.state = CellState::Hidden;
+            },
+            _ => {}
+        }
     }
 
     pub fn right_out(&mut self) {
+        if !self.is_right_pressed {
+            return;
+        }
         self.is_right_pressed = false;
-        info!("right out: ({}, {})", self.x, self.y);
     }
 
     pub fn right_released(&mut self) {
+        if !self.is_right_pressed {
+            return;
+        }
         self.is_right_pressed = false;
-        info!("right released: ({}, {})", self.x, self.y);
     }
 
     pub fn both_pressed(&mut self) {
+        if self.is_both_pressed {
+            return;
+        }
         self.is_both_pressed = true;
-        info!("both pressed: ({}, {})", self.x, self.y);
+        match self.state {
+            CellState::Revealed => {
+                // TODO:
+            },
+            _ => {}
+        }
     }
 
     pub fn both_out(&mut self) {
+        if !self.is_both_pressed {
+            return;
+        }
         self.is_both_pressed = false;
-        info!("both out: ({}, {})", self.x, self.y);
+        match self.state {
+            CellState::Revealed => {
+                // TODO:
+            },
+            _ => {}
+        }
     }
 
     pub fn both_released(&mut self) {
+        if !self.is_both_pressed {
+            return;
+        }
         self.is_both_pressed = false;
-        info!("both released: ({}, {})", self.x, self.y);
+        match self.state {
+            CellState::Revealed => {
+                // TODO:
+            },
+            _ => {}
+        }
+    }
+
+    pub fn get_texture_index(&self) -> u32 {
+        match self.state {
+            CellState::Hidden => 0,
+            CellState::Pressed => 1,
+            CellState::Revealed => {
+                if self.is_mine {
+                    5
+                } else if self.num_mines_around == 0 {
+                    1 
+                } else {
+                    self.num_mines_around + 7
+                }
+            },
+            CellState::Flagged => 2,
+            CellState::WrongFlagged => 7,
+            CellState::Exploded => 6,
+        }
+    }
+
+    pub fn open(&mut self) -> bool {
+        self.state = CellState::Revealed;
+        !self.is_mine
     }
 }

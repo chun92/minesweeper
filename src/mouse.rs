@@ -1,6 +1,6 @@
 //! Prints all mouse events to the console.
 
-use bevy::{input::mouse::MouseButtonInput, prelude::*};
+use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use super::cell::Cell;
 
@@ -9,8 +9,8 @@ pub struct Clickable(pub Vec3, pub f32, pub f32);
 
 impl Clickable {
     pub fn is_inside(&self, position: Vec2) -> bool {
-        if position.x > self.0.x - self.1 / 2.0 && position.x < self.0.x + self.1 / 2.0 &&
-            position.y > self.0.y - self.2 / 2.0 && position.y < self.0.y + self.2 / 2.0 {
+        if position.x >= self.0.x - self.1 / 2.0 && position.x < self.0.x + self.1 / 2.0 &&
+            position.y >= self.0.y - self.2 / 2.0 && position.y < self.0.y + self.2 / 2.0 {
             true
         } else {
             false

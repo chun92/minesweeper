@@ -19,9 +19,11 @@ fn main() {
         .init_resource::<asset::loader::TextureAtlasResource>()
         .init_resource::<grid::TotalMine>()
         .init_resource::<grid::RemainingMine>()
+        .init_resource::<grid::Grid>()
         .add_systems(Startup, asset::loader::setup)
         .add_systems(PostStartup, system::spawn_camera)
-        .add_systems(PostStartup, system::spawn_grid)
+        .add_systems(PostStartup, system::init_grid)
         .add_systems(Update, mouse::print_mouse_events_system)
+        .add_systems(Update, system::open_cells)
         .run();
 }
