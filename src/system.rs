@@ -75,7 +75,7 @@ pub fn init_grid(
     }
 }
 
-pub fn open_cells(
+pub fn update_cells(
     mut q_cells: Query<(Entity, &mut Cell, &mut TextureAtlasSprite)>,
     grid: Res<Grid>,
 ) {
@@ -116,6 +116,11 @@ pub fn open_cells(
     for (entity, mut cell, mut sprite) in q_cells.iter_mut() {
         if target.contains(&entity) {
             cell.open();
+            sprite.index = cell.get_texture_index() as usize;
+        }
+
+        if cell.is_flagging {
+            cell.is_flagging = false;
             sprite.index = cell.get_texture_index() as usize;
         }
     }

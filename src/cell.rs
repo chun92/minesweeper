@@ -31,6 +31,7 @@ pub struct Cell {
     pub is_right_pressed: bool,
     pub is_both_pressed: bool,
     pub is_opening: bool,
+    pub is_flagging: bool,
 }
 
 impl Cell {
@@ -44,6 +45,7 @@ impl Cell {
             is_right_pressed: false,
             is_both_pressed: false,
             is_opening: false,
+            is_flagging: false,
         }
     }
 
@@ -83,9 +85,6 @@ impl Cell {
         self.is_left_pressed = false;
 
         match self.state {
-            CellState::Hidden => {
-                panic!("left out should not be called when cell is hidden");
-            }
             CellState::Pressed => {
                 self.state = CellState::Hidden;
             },
@@ -100,11 +99,22 @@ impl Cell {
         self.is_left_pressed = false;
 
         match self.state {
-            CellState::Hidden => {
-                panic!("left released should not be called when cell is hidden");
-            },
             CellState::Pressed => {
                 self.is_opening = true;
+            },
+            _ => {}
+        }
+    }
+
+    pub fn right_just_pressed(&mut self) {
+        match self.state {
+            CellState::Hidden => {
+                self.state = CellState::Flagged;
+                self.is_flagging = true;
+            },
+            CellState::Flagged => {
+                self.state = CellState::Hidden;
+                self.is_flagging = true;
             },
             _ => {}
         }
@@ -115,16 +125,6 @@ impl Cell {
             return;
         }
         self.is_right_pressed = true;
-        
-        match self.state {
-            CellState::Hidden => {
-                self.state = CellState::Flagged;
-            },
-            CellState::Flagged => {
-                self.state = CellState::Hidden;
-            },
-            _ => {}
-        }
     }
 
     pub fn right_out(&mut self) {
