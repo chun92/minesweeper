@@ -87,8 +87,6 @@ impl Cell {
             },
             _ => {}
         }
-
-        info!("left_pressed, x: {}, y: {}", self.x, self.y);
     }
 
     pub fn left_out(&mut self) {
@@ -109,8 +107,6 @@ impl Cell {
             },
             _ => {}
         }
-
-        info!("left_out, x: {}, y: {}", self.x, self.y);
     }
 
     pub fn left_released(&mut self) {
@@ -128,8 +124,6 @@ impl Cell {
             },
             _ => {}
         }
-
-        info!("left_released, x: {}, y: {}", self.x, self.y);
     }
 
     pub fn right_just_pressed(&mut self) {
@@ -145,8 +139,6 @@ impl Cell {
             },
             _ => {}
         }
-
-        info!("right_just_pressed, x: {}, y: {}", self.x, self.y);
     }
 
     pub fn get_texture_index(&self) -> u32 {
