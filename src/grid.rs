@@ -84,7 +84,7 @@ impl Grid {
         }
         None
     }
-    
+
     pub fn get_arround_cells(&self, x: u32, y: u32) -> Vec<(u32, u32, Option<Entity>)> {
         let width = self.width;
         let height = self.height;

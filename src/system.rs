@@ -75,9 +75,9 @@ pub fn init_grid(
     }
 }
 
-pub fn update_cells(
-    mut q_cells: Query<(Entity, &mut Cell)>,
-    grid: Res<Grid>,
+fn update_cells_open(
+    q_cells: &mut Query<(Entity, &mut Cell)>,
+    grid: &Res<Grid>,
 ) {
     let mut queue: Vec<(Entity, u32, u32)> = Vec::new();
     let mut visitied: Vec<(u32, u32)> = Vec::new();
@@ -118,6 +118,142 @@ pub fn update_cells(
             cell.open();
         }
     }
+}
+
+fn update_querying_cell(
+    x: u32,
+    y: u32,
+    entity: Entity,
+    q_cells: &mut Query<(Entity, &mut Cell)>,
+    grid: &Res<Grid>,
+) {
+    let query = q_cells.get(entity).unwrap();
+    let cell = query.1;
+    if cell.is_mine {
+        return;
+    }
+    if cell.num_mines_around == 0 {
+        return;
+    }
+    let arround_cells = grid.get_arround_cells(x, y);
+    for (_, _, entity) in arround_cells {
+        if let Some(entity) = entity {
+            let mut cell = q_cells.get_mut(entity).unwrap().1;
+            if cell.state == super::cell::CellState::Hidden {
+                cell.state = super::cell::CellState::Pressed;
+            }
+        }
+    }
+}
+
+fn update_querying_out_cell(
+    x: u32,
+    y: u32,
+    entity: Entity,
+    q_cells: &mut Query<(Entity, &mut Cell)>,
+    grid: &Res<Grid>,
+) {
+    let query = q_cells.get(entity).unwrap();
+    let cell = query.1;
+    if cell.is_mine {
+        return;
+    }
+    if cell.num_mines_around == 0 {
+        return;
+    }
+    let arround_cells = grid.get_arround_cells(x, y);
+
+    for (_, _, entity) in arround_cells {
+        if let Some(entity) = entity {
+            let mut cell = q_cells.get_mut(entity).unwrap().1;
+            if cell.state == super::cell::CellState::Pressed && !cell.is_left_pressed {
+                cell.state = super::cell::CellState::Hidden;
+            }
+        }
+    }
+}
+
+fn update_querying_done_cell(
+    x: u32,
+    y: u32,
+    entity: Entity,
+    q_cells: &mut Query<(Entity, &mut Cell)>,
+    grid: &Res<Grid>,
+) {
+    let query = q_cells.get(entity).unwrap();
+    let cell = query.1;
+    if cell.is_mine {
+        return;
+    }
+    if cell.num_mines_around == 0 {
+        return;
+    }
+    let arround_cells = grid.get_arround_cells(x, y);
+    let mut num_of_flagged = 0;
+
+    for (_, _, entity) in &arround_cells {
+        if let Some(entity) = entity {
+            let cell = q_cells.get(*entity).unwrap().1;
+            if cell.state == super::cell::CellState::Flagged {
+                num_of_flagged += 1;
+            }
+        }
+    }
+
+    let open_others = num_of_flagged == cell.num_mines_around;
+
+    for (_, _, entity) in &arround_cells {
+        if let Some(entity) = entity {
+            let mut cell = q_cells.get_mut(*entity).unwrap().1;
+            if cell.state == super::cell::CellState::Pressed {
+                cell.state = super::cell::CellState::Hidden;
+                if open_others {
+                    cell.is_opening = true;
+                }
+            }
+        }
+    }
+}
+
+fn update_cells_query(
+    q_cells: &mut Query<(Entity, &mut Cell)>,
+    grid: &Res<Grid>,
+) {
+    let mut querying_queue: Vec<(Entity, u32, u32)> = Vec::new();
+    let mut querying_out_queue: Vec<(Entity, u32, u32)> = Vec::new();
+    let mut querying_done_queue: Vec<(Entity, u32, u32)> = Vec::new();
+    for (entity, mut cell,) in q_cells.iter_mut() {
+        if cell.query_state == super::cell::QueryState::Querying {
+            querying_queue.push((entity, cell.x, cell.y));
+        } else if cell.query_state == super::cell::QueryState::QueryingOut {
+            querying_out_queue.push((entity, cell.x, cell.y));
+        } else if cell.query_state == super::cell::QueryState::QueryingDone {
+            querying_done_queue.push((entity, cell.x, cell.y));
+        }
+        cell.query_state = super::cell::QueryState::None;
+    }
+
+    if !querying_out_queue.is_empty() {
+        let (entity, x, y) = querying_out_queue.pop().unwrap();
+        update_querying_out_cell(x, y, entity, q_cells, grid);
+    }
+    if !querying_queue.is_empty() {
+        let (entity, x, y) = querying_queue.pop().unwrap();
+        update_querying_cell(x, y, entity, q_cells, grid);
+    }
+    if !querying_done_queue.is_empty() {
+        let (entity, x, y) = querying_done_queue.pop().unwrap();
+        update_querying_done_cell(x, y, entity, q_cells, grid);
+    }
+
+}
+
+pub fn update_cells(
+    mut q_cells: Query<(Entity, &mut Cell)>,
+    grid: Res<Grid>,
+) {
+    update_cells_query(&mut q_cells, &grid);
+    update_cells_open(&mut q_cells, &grid);
 }
 
 

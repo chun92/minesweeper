@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use super::grid::Grid;
 use super::asset;
 
+#[derive(PartialEq, Eq)]
 pub enum CellState {
     Hidden,
     Pressed,
@@ -20,6 +21,14 @@ impl Cells {
     }
 }
 
+#[derive(PartialEq, Eq)]
+pub enum QueryState {
+    None,
+    Querying,
+    QueryingOut,
+    QueryingDone,
+}
+
 #[derive(Component)]
 pub struct Cell {
     pub x: u32,
@@ -28,9 +37,8 @@ pub struct Cell {
     pub num_mines_around: u32,
     pub state: CellState,
     pub is_left_pressed: bool,
-    pub is_right_pressed: bool,
-    pub is_both_pressed: bool,
     pub is_opening: bool,
+    pub query_state: QueryState,
 }
 
 impl Cell {
@@ -41,9 +49,8 @@ impl Cell {
             num_mines_around, 
             state: CellState::Hidden,
             is_left_pressed: false,
-            is_right_pressed: false,
-            is_both_pressed: false,
             is_opening: false,
+            query_state: QueryState::None,
         }
     }
 
@@ -72,8 +79,16 @@ impl Cell {
             CellState::Hidden => {
                 self.state = CellState::Pressed;
             },
+            CellState::Revealed => {
+                if self.num_mines_around == 0 {
+                    return;
+                }
+                self.query_state = QueryState::Querying;
+            },
             _ => {}
         }
+
+        info!("left_pressed, x: {}, y: {}", self.x, self.y);
     }
 
     pub fn left_out(&mut self) {
@@ -86,8 +101,16 @@ impl Cell {
             CellState::Pressed => {
                 self.state = CellState::Hidden;
             },
+            CellState::Revealed => {
+                if self.num_mines_around == 0 {
+                    return;
+                }
+                self.query_state = QueryState::QueryingOut;
+            },
             _ => {}
         }
+
+        info!("left_out, x: {}, y: {}", self.x, self.y);
     }
 
     pub fn left_released(&mut self) {
@@ -100,8 +123,13 @@ impl Cell {
             CellState::Pressed => {
                 self.is_opening = true;
             },
+            CellState::Revealed => {
+                self.query_state = QueryState::QueryingDone;
+            },
             _ => {}
         }
+
+        info!("left_released, x: {}, y: {}", self.x, self.y);
     }
 
     pub fn right_just_pressed(&mut self) {
@@ -109,71 +137,16 @@ impl Cell {
             CellState::Hidden => {
                 self.state = CellState::Flagged;
             },
+            CellState::Pressed => {
+                self.state = CellState::Flagged;
+            },
             CellState::Flagged => {
                 self.state = CellState::Hidden;
             },
             _ => {}
         }
-    }
 
-    pub fn right_pressed(&mut self) {
-        if self.is_right_pressed {
-            return;
-        }
-        self.is_right_pressed = true;
-    }
-
-    pub fn right_out(&mut self) {
-        if !self.is_right_pressed {
-            return;
-        }
-        self.is_right_pressed = false;
-    }
-
-    pub fn right_released(&mut self) {
-        if !self.is_right_pressed {
-            return;
-        }
-        self.is_right_pressed = false;
-    }
-
-    pub fn both_pressed(&mut self) {
-        if self.is_both_pressed {
-            return;
-        }
-        self.is_both_pressed = true;
-        match self.state {
-            CellState::Revealed => {
-                // TODO:
-            },
-            _ => {}
-        }
-    }
-
-    pub fn both_out(&mut self) {
-        if !self.is_both_pressed {
-            return;
-        }
-        self.is_both_pressed = false;
-        match self.state {
-            CellState::Revealed => {
-                // TODO:
-            },
-            _ => {}
-        }
-    }
-
-    pub fn both_released(&mut self) {
-        if !self.is_both_pressed {
-            return;
-        }
-        self.is_both_pressed = false;
-        match self.state {
-            CellState::Revealed => {
-                // TODO:
-            },
-            _ => {}
-        }
+        info!("right_just_pressed, x: {}, y: {}", self.x, self.y);
     }
 
     pub fn get_texture_index(&self) -> u32 {
@@ -196,6 +169,7 @@ impl Cell {
     }
 
     pub fn open(&mut self) -> bool {
+        // TODO: check it is wrong flag
         self.state = CellState::Revealed;
         !self.is_mine
     }

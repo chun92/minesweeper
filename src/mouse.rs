@@ -27,37 +27,13 @@ pub fn print_mouse_events_system(
         if let Some(position) = q_windows.single().cursor_position() {
             for (mut cell, clickable) in q_cells.iter_mut() {
                 if clickable.is_inside(position) {
-                    if cell.is_right_pressed && !cell.is_both_pressed {
-                        cell.both_pressed();
-                    } else if !cell.is_left_pressed {
+                    if !cell.is_left_pressed {
                         cell.left_pressed();
                     }
                 } else {
-                    if cell.is_both_pressed {
-                        cell.both_out();
-                    } else if cell.is_left_pressed {
+                    if cell.is_left_pressed {
                         cell.left_out();
                     }                   
-                }
-            }
-        }
-    }
-
-    if buttons.pressed(MouseButton::Right) {
-        if let Some(position) = q_windows.single().cursor_position() {
-            for (mut cell, clickable) in q_cells.iter_mut() {
-                if clickable.is_inside(position) {
-                    if cell.is_left_pressed && !cell.is_both_pressed {
-                        cell.both_pressed();
-                    } else if !cell.is_right_pressed {
-                        cell.right_pressed();
-                    }
-                } else {
-                    if cell.is_both_pressed {
-                        cell.both_out();
-                    } else if cell.is_right_pressed {
-                        cell.right_out();
-                    }
                 }
             }
         }
@@ -67,30 +43,14 @@ pub fn print_mouse_events_system(
         if let Some(position) = q_windows.single().cursor_position() {
             for (mut cell, clickable) in q_cells.iter_mut() {
                 if clickable.is_inside(position) {
-                    if cell.is_both_pressed && !cell.is_right_pressed {
-                        cell.both_released();
-                    } else if cell.is_left_pressed {
+                    if cell.is_left_pressed {
                         cell.left_released();
                     }
                 }
             }
         }
     }
-
-    if buttons.just_released(MouseButton::Right) {
-        if let Some(position) = q_windows.single().cursor_position() {
-            for (mut cell, clickable) in q_cells.iter_mut() {
-                if clickable.is_inside(position) {
-                    if cell.is_both_pressed && !cell.is_left_pressed {
-                        cell.both_released();
-                    } else if cell.is_right_pressed {
-                        cell.right_released();
-                    }
-                }
-            }
-        }
-    }
-
+    
     if buttons.just_pressed(MouseButton::Right) {
         if let Some(position) = q_windows.single().cursor_position() {
             for (mut cell, clickable) in q_cells.iter_mut() {
