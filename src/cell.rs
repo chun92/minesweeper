@@ -31,7 +31,6 @@ pub struct Cell {
     pub is_right_pressed: bool,
     pub is_both_pressed: bool,
     pub is_opening: bool,
-    pub is_flagging: bool,
 }
 
 impl Cell {
@@ -45,7 +44,6 @@ impl Cell {
             is_right_pressed: false,
             is_both_pressed: false,
             is_opening: false,
-            is_flagging: false,
         }
     }
 
@@ -110,11 +108,9 @@ impl Cell {
         match self.state {
             CellState::Hidden => {
                 self.state = CellState::Flagged;
-                self.is_flagging = true;
             },
             CellState::Flagged => {
                 self.state = CellState::Hidden;
-                self.is_flagging = true;
             },
             _ => {}
         }

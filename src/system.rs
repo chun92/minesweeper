@@ -76,13 +76,13 @@ pub fn init_grid(
 }
 
 pub fn update_cells(
-    mut q_cells: Query<(Entity, &mut Cell, &mut TextureAtlasSprite)>,
+    mut q_cells: Query<(Entity, &mut Cell)>,
     grid: Res<Grid>,
 ) {
     let mut queue: Vec<(Entity, u32, u32)> = Vec::new();
     let mut visitied: Vec<(u32, u32)> = Vec::new();
     let mut target: Vec<Entity> = Vec::new();
-    for (entity, mut cell, _) in q_cells.iter_mut() {
+    for (entity, mut cell,) in q_cells.iter_mut() {
         if cell.is_opening {
             cell.is_opening = false;
             queue.push((entity, cell.x, cell.y));
@@ -112,16 +112,19 @@ pub fn update_cells(
             }
         }
     }
-
-    for (entity, mut cell, mut sprite) in q_cells.iter_mut() {
+    
+    for (entity, mut cell,) in q_cells.iter_mut() {
         if target.contains(&entity) {
             cell.open();
-            sprite.index = cell.get_texture_index() as usize;
         }
+    }
+}
 
-        if cell.is_flagging {
-            cell.is_flagging = false;
-            sprite.index = cell.get_texture_index() as usize;
-        }
+
+pub fn update_cells_texture(
+    mut q_cells: Query<(&Cell, &mut TextureAtlasSprite)>,
+) {
+    for (cell, mut sprite) in q_cells.iter_mut() {
+        sprite.index = cell.get_texture_index() as usize;
     }
 }

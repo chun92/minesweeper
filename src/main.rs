@@ -25,5 +25,6 @@ fn main() {
         .add_systems(PostStartup, system::init_grid)
         .add_systems(Update, mouse::print_mouse_events_system)
         .add_systems(Update, system::update_cells)
+        .add_systems(Update, system::update_cells_texture)
         .run();
 }
