@@ -80,6 +80,9 @@ impl Cell {
                 self.state = CellState::Pressed;
             },
             CellState::Revealed => {
+                if self.is_mine {
+                    return;
+                }
                 if self.num_mines_around == 0 {
                     return;
                 }
@@ -100,6 +103,9 @@ impl Cell {
                 self.state = CellState::Hidden;
             },
             CellState::Revealed => {
+                if self.is_mine {
+                    return;
+                }
                 if self.num_mines_around == 0 {
                     return;
                 }
@@ -120,6 +126,9 @@ impl Cell {
                 self.is_opening = true;
             },
             CellState::Revealed => {
+                if self.is_mine {
+                    return;
+                }
                 self.query_state = QueryState::QueryingDone;
             },
             _ => {}
@@ -161,8 +170,30 @@ impl Cell {
     }
 
     pub fn open(&mut self) -> bool {
-        // TODO: check it is wrong flag
-        self.state = CellState::Revealed;
-        !self.is_mine
+        match self.state {
+            CellState::Hidden => {
+                if self.is_mine {
+                    self.state = CellState::Exploded;
+                    false
+                } else {
+                    self.state = CellState::Revealed;
+                    true
+                }
+            },
+            CellState::Pressed => {
+                if self.is_mine {
+                    self.state = CellState::Exploded;
+                    false
+                } else {
+                    self.state = CellState::Revealed;
+                    true
+                }
+            },
+            CellState::Flagged => {
+                self.state = CellState::WrongFlagged;
+                false
+            },
+            _ => false,
+        }
     }
 }
