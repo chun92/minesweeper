@@ -78,7 +78,7 @@ pub fn init_grid(
 fn update_cells_open(
     q_cells: &mut Query<(Entity, &mut Cell)>,
     grid: &Res<Grid>,
-) {
+) -> bool {
     let mut queue: Vec<(Entity, u32, u32)> = Vec::new();
     let mut visitied: Vec<(u32, u32)> = Vec::new();
     let mut target: Vec<Entity> = Vec::new();
@@ -113,11 +113,14 @@ fn update_cells_open(
         }
     }
     
+    let mut result = true;
     for (entity, mut cell,) in q_cells.iter_mut() {
         if target.contains(&entity) {
-            cell.open();
+            result &= cell.open();
         }
     }
+
+    result
 }
 
 fn update_querying_cell(
@@ -255,16 +258,27 @@ fn update_cells_query(
 pub fn update_cells(
     mut q_cells: Query<(Entity, &mut Cell)>,
     grid: Res<Grid>,
+    mut next_state: ResMut<NextState<super::game_state::GameState>>,
 ) {
     update_cells_query(&mut q_cells, &grid);
-    update_cells_open(&mut q_cells, &grid);
+    let result = update_cells_open(&mut q_cells, &grid);
+    if !result {
+        next_state.set(super::game_state::GameState::Defeated);
+    }
 }
-
 
 pub fn update_cells_texture(
     mut q_cells: Query<(&Cell, &mut TextureAtlasSprite)>,
 ) {
     for (cell, mut sprite) in q_cells.iter_mut() {
         sprite.index = cell.get_texture_index() as usize;
+    }
+}
+
+pub fn bomb(
+    mut q_cells: Query<&mut Cell>,
+) {
+    for mut cell in q_cells.iter_mut() {
+        cell.bomb();
     }
 }

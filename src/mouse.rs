@@ -18,7 +18,7 @@ impl Clickable {
     }
 }
 
-pub fn print_mouse_events_system(
+pub fn mouse_events_system(
     buttons: Res<Input<MouseButton>>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
     mut q_cells: Query<(&mut Cell, &Clickable)>,
