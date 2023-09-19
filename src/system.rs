@@ -210,6 +210,10 @@ fn update_querying_done_cell(
                 if open_others {
                     cell.is_opening = true;
                 }
+            } else if cell.state == super::cell::CellState::Flagged {
+                if open_others {
+                    cell.is_opening = true;
+                }
             }
         }
     }

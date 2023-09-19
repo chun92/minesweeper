@@ -169,31 +169,28 @@ impl Cell {
         }
     }
 
-    pub fn open(&mut self) -> bool {
+    pub fn open(&mut self) {
         match self.state {
             CellState::Hidden => {
                 if self.is_mine {
                     self.state = CellState::Exploded;
-                    false
                 } else {
                     self.state = CellState::Revealed;
-                    true
                 }
             },
             CellState::Pressed => {
                 if self.is_mine {
                     self.state = CellState::Exploded;
-                    false
                 } else {
                     self.state = CellState::Revealed;
-                    true
                 }
             },
             CellState::Flagged => {
-                self.state = CellState::WrongFlagged;
-                false
+                if !self.is_mine {
+                    self.state = CellState::WrongFlagged;
+                }
             },
-            _ => false,
+            _ => {},
         }
     }
 }
