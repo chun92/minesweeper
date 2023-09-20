@@ -22,8 +22,8 @@ pixel_size:
 |---8---|
 
 upper_size:
-- O: Number
-- X: Smile
+- O: Number: 41(39 + 2) * 25(23 + 2)
+- X: Smile: 26(24 + 2) * 26(24 + 2)
 
 |--5-----7--|
 |  4  4  4  |

@@ -1,24 +1,24 @@
 #[derive(Hash, PartialEq, Eq)]
-pub enum TextureAtlasType {
+pub enum TextureType {
     Cells,
     Smiles,
-    Times,
+    Numbers,
 }
 
-impl TextureAtlasType {
+impl TextureType {
     pub fn get_path(&self) -> &str {
         match self {
-            TextureAtlasType::Cells => "cells.png",
-            TextureAtlasType::Smiles => "smiles.png",
-            TextureAtlasType::Times => "times.png",
+            TextureType::Cells => "cells.png",
+            TextureType::Smiles => "smiles.png",
+            TextureType::Numbers => "numbers.png",
         }
     }
 
     pub fn get_cell_size(&self) -> (f32, f32, u32, u32, f32, f32) {
         match self {
-            TextureAtlasType::Cells => (16.0, 16.0, 8, 2, 1.0, 1.0),
-            TextureAtlasType::Smiles => (24.0, 24.0, 5, 1, 1.0, 0.0),
-            TextureAtlasType::Times => (13.0, 23.0, 12, 1, 1.0, 0.0),
+            TextureType::Cells => (16.0, 16.0, 8, 2, 1.0, 1.0),
+            TextureType::Smiles => (24.0, 24.0, 5, 1, 1.0, 0.0),
+            TextureType::Numbers => (13.0, 23.0, 12, 1, 1.0, 0.0),
         }
     }
 }

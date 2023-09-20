@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy::utils::HashSet;
 use rand::seq::SliceRandom;
 
-use super::asset::texture_type::TextureAtlasType;
+use super::asset::texture_type::TextureType;
 #[derive(Resource)]
 pub struct Grid {
     pub width: u32,
@@ -41,8 +41,8 @@ impl Grid {
         self.width = width;
         self.height = height;
         
-        let cell_width = TextureAtlasType::Cells.get_cell_size().0;
-        let cell_height = TextureAtlasType::Cells.get_cell_size().1;
+        let cell_width = TextureType::Cells.get_cell_size().0;
+        let cell_height = TextureType::Cells.get_cell_size().1;
     
         let grid_width = cell_width * self.width as f32;
         let grid_height = cell_height * self.height as f32;

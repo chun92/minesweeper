@@ -20,11 +20,11 @@ fn spawn_cell(
     grid_id: Entity,
 ) {
     let position = cell.get_position(grid);
-    let texture_atlas_handle = texture_atlas_resource.handles.get(&asset::texture_type::TextureAtlasType::Cells).unwrap();
+    let texture_atlas_handle = texture_atlas_resource.handles.get(&asset::texture_type::TextureType::Cells).unwrap();
     let index = cell.get_texture_index();
     
-    let width = asset::texture_type::TextureAtlasType::Cells.get_cell_size().0;
-    let height = asset::texture_type::TextureAtlasType::Cells.get_cell_size().1;
+    let width = asset::texture_type::TextureType::Cells.get_cell_size().0;
+    let height = asset::texture_type::TextureType::Cells.get_cell_size().1;
     
     let x = cell.x;
     let y = cell.y;

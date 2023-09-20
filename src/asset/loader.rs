@@ -1,10 +1,10 @@
 use bevy::{prelude::*, utils::HashMap};
 
-use super::texture_type::TextureAtlasType;
+use super::texture_type::TextureType;
 
 #[derive(Resource, Default)]
 pub struct TextureAtlasResource {
-    pub handles: HashMap<TextureAtlasType, Handle<TextureAtlas>>,
+    pub handles: HashMap<TextureType, Handle<TextureAtlas>>,
 }
 
 struct AtlasOptions {
@@ -52,7 +52,7 @@ fn load_texture_as_atlas(handle: Handle<Image>,
 }
 
 fn load_texture(
-    atlas_type: TextureAtlasType,
+    atlas_type: TextureType,
     option: AtlasOptions,
     asset_server: &AssetServer,
     texture_atlases: &mut Assets<TextureAtlas>,
@@ -68,7 +68,7 @@ fn load_texture_with_type(
     asset_server: &AssetServer,
     texture_atlases: &mut Assets<TextureAtlas>,
     texture_atlas_resource: &mut TextureAtlasResource,
-    atlas_type: TextureAtlasType
+    atlas_type: TextureType
 ) {
     let width = atlas_type.get_cell_size().0;
     let height = atlas_type.get_cell_size().1;
@@ -88,7 +88,7 @@ pub fn setup(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut texture_atlas_resource: ResMut<TextureAtlasResource>,
 ) {
-    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureAtlasType::Cells);
-    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureAtlasType::Smiles);
-    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureAtlasType::Times);
+    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureType::Cells);
+    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureType::Smiles);
+    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureType::Numbers);
 }
