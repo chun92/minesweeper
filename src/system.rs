@@ -4,10 +4,18 @@ use bevy::window::PrimaryWindow;
 use super::grid::Grid;
 use super::grid::TotalMine;
 use super::cell::Cell;
-use super::cell::Cells;
 use super::asset;
 use super::mouse;
 use super::asset::texture_type::TextureType;
+
+#[derive(Component, Default)]
+pub struct Frame();
+
+impl Frame {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 
 pub fn spawn_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
@@ -18,7 +26,7 @@ fn spawn_cell(
     cell: Cell,
     grid: &mut Grid,
     texture_atlas_resource: &asset::loader::TextureAtlasResource,
-    grid_id: Entity,
+    frame_id: Entity,
 ) {
     let position = cell.get_position(grid);
     let texture_atlas_handle = texture_atlas_resource.handles.get(&TextureType::Cells).unwrap();
@@ -44,7 +52,7 @@ fn spawn_cell(
             Vec3::new(position.x + grid.window_position.x, -position.y + grid.window_position.y, 0.0), 
             width, 
             height),
-    )).set_parent(grid_id).id();
+    )).set_parent(frame_id).id();
 
     grid.cells.push((x, y, id));
 }
@@ -56,7 +64,7 @@ fn spawn_frame(
     commands: &mut Commands,
     grid: &mut Grid,
     texture_atlas_resource: &asset::loader::TextureAtlasResource,
-    grid_id: Entity,
+    frame_id: Entity,
 ) {
     let width = grid.window_size.x;
     let height = grid.window_size.y;
@@ -78,7 +86,7 @@ fn spawn_frame(
                 },
                 ..default()
             },
-        )).set_parent(grid_id);
+        )).set_parent(frame_id);
     };
 
     let position = Vec3::new(left_position - TextureType::EdgeLeft.get_cell_size().0 / 2.0, 0.0, 0.0);
@@ -169,8 +177,8 @@ pub fn init_grid(
     grid.create_mine_positions(mines.0);
     let mine_positions = &grid.mine_positions.clone();
     
-    let cells_id = commands.spawn((
-        Cells::new(),
+    let frame_id = commands.spawn((
+        Frame::new(),
         SpatialBundle::default()
     )).id();
 
@@ -178,10 +186,10 @@ pub fn init_grid(
         for y in 1..=grid.height {
             let is_mine = mine_positions.contains(&(x, y));
             let num_mines_around = grid.get_num_mines_around(x, y);
-            spawn_cell(&mut commands, Cell::new(x, y, is_mine, num_mines_around), &mut grid, &texture_atlas_resource, cells_id);
+            spawn_cell(&mut commands, Cell::new(x, y, is_mine, num_mines_around), &mut grid, &texture_atlas_resource, frame_id);
         }
     }
-    spawn_frame(&mut commands, &mut grid, &texture_atlas_resource, cells_id);
+    spawn_frame(&mut commands, &mut grid, &texture_atlas_resource, frame_id);
 }
 
 fn update_cells_open(
