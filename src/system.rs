@@ -7,6 +7,7 @@ use super::cell::Cell;
 use super::cell::Cells;
 use super::asset;
 use super::mouse;
+use super::asset::texture_type::TextureType;
 
 pub fn spawn_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
@@ -20,11 +21,11 @@ fn spawn_cell(
     grid_id: Entity,
 ) {
     let position = cell.get_position(grid);
-    let texture_atlas_handle = texture_atlas_resource.handles.get(&asset::texture_type::TextureType::Cells).unwrap();
+    let texture_atlas_handle = texture_atlas_resource.handles.get(&TextureType::Cells).unwrap();
     let index = cell.get_texture_index();
     
-    let width = asset::texture_type::TextureType::Cells.get_cell_size().0;
-    let height = asset::texture_type::TextureType::Cells.get_cell_size().1;
+    let width = TextureType::Cells.get_cell_size().0;
+    let height = TextureType::Cells.get_cell_size().1;
     
     let x = cell.x;
     let y = cell.y;
@@ -46,6 +47,113 @@ fn spawn_cell(
     )).set_parent(grid_id).id();
 
     grid.cells.push((x, y, id));
+}
+
+const FRAME_SYSTEM_HEIGHT : f32 = 33.0;
+const EPSILON : f32 = 0.000000000001;
+
+fn spawn_frame(
+    commands: &mut Commands,
+    grid: &mut Grid,
+    texture_atlas_resource: &asset::loader::TextureAtlasResource,
+    grid_id: Entity,
+) {
+    let width = grid.window_size.x;
+    let height = grid.window_size.y;
+    let left_position = -width / 2.0;
+    let right_position = width / 2.0;
+    let top_position = height / 2.0;
+    let bottom_position = -height / 2.0;
+
+    let mut spawn = |texture_type: TextureType, position: Vec3, scale: Vec3| {
+        let texture_atlas_handle = texture_atlas_resource.handles.get(&texture_type).unwrap();
+        commands.spawn((
+            SpriteSheetBundle {
+                texture_atlas: texture_atlas_handle.clone(),
+                sprite: TextureAtlasSprite::new(0),
+                transform: Transform {
+                    translation: position,
+                    scale: scale,
+                    ..default()
+                },
+                ..default()
+            },
+        )).set_parent(grid_id);
+    };
+
+    let position = Vec3::new(left_position - TextureType::EdgeLeft.get_cell_size().0 / 2.0, 0.0, 0.0);
+    let scale = Vec3::new(1.0, height / TextureType::EdgeLeft.get_cell_size().1, 1.0);
+    spawn(TextureType::EdgeLeft, position, scale);
+
+    let position = Vec3::new(right_position + TextureType::EdgeRight.get_cell_size().0 / 2.0, 0.0, 0.0);
+    let scale = Vec3::new(1.0, height / TextureType::EdgeRight.get_cell_size().1, 1.0);
+    spawn(TextureType::EdgeRight, position, scale);    
+
+    let position = Vec3::new(0.0, top_position + TextureType::EdgeTop.get_cell_size().1 / 2.0 - 1.0, 0.0);
+    let scale = Vec3::new(width / TextureType::EdgeTop.get_cell_size().0, 1.0, 1.0);
+    spawn(TextureType::EdgeTop, position, scale);
+
+    let position = Vec3::new(0.0, bottom_position - TextureType::EdgeBottom.get_cell_size().1 / 2.0, 0.0);
+    let scale = Vec3::new(width / TextureType::EdgeBottom.get_cell_size().0, 1.0, 1.0);
+    spawn(TextureType::EdgeBottom, position, scale);
+
+    let position = Vec3::new(left_position - TextureType::CornerLeftBottom.get_cell_size().0 / 2.0, bottom_position - TextureType::CornerLeftBottom.get_cell_size().1 / 2.0, 0.0);
+    let scale = Vec3::new(1.0, 1.0, 1.0);
+    spawn(TextureType::CornerLeftBottom, position, scale);
+
+    let position = Vec3::new(right_position + TextureType::CornerRightBottom.get_cell_size().0 / 2.0, bottom_position - TextureType::CornerRightBottom.get_cell_size().1 / 2.0, 0.0);
+    let scale = Vec3::new(1.0, 1.0, 1.0);
+    spawn(TextureType::CornerRightBottom, position, scale);
+
+    let position = Vec3::new(left_position - TextureType::CornerLeftTop.get_cell_size().0 / 2.0, top_position + TextureType::CornerLeftTop.get_cell_size().1 / 2.0, 0.0);
+    let scale = Vec3::new(1.0, 1.0, 1.0);
+    spawn(TextureType::CornerLeftTop, position, scale);
+
+    let position = Vec3::new(right_position + TextureType::CornerRightTop.get_cell_size().0 / 2.0, top_position + TextureType::CornerRightTop.get_cell_size().1 / 2.0, 0.0);
+    let scale = Vec3::new(1.0, 1.0, 1.0);
+    spawn(TextureType::CornerRightTop, position, scale);
+
+    let top_position = top_position + TextureType::CornerLeftTop.get_cell_size().1;
+    let left_position = left_position - 1.0;
+    let right_position = right_position + 1.0;
+
+    let position = Vec3::new(left_position - TextureType::EdgeLeftUpper.get_cell_size().0 / 2.0, top_position + FRAME_SYSTEM_HEIGHT / 2.0, 0.0);
+    let scale = Vec3::new(1.0, FRAME_SYSTEM_HEIGHT / TextureType::EdgeLeftUpper.get_cell_size().1, 1.0);
+    spawn(TextureType::EdgeLeftUpper, position, scale); 
+
+    let position = Vec3::new(right_position + TextureType::EdgeRightUpper.get_cell_size().0 / 2.0, top_position + FRAME_SYSTEM_HEIGHT / 2.0, 0.0);
+    let scale = Vec3::new(1.0, FRAME_SYSTEM_HEIGHT / TextureType::EdgeRightUpper.get_cell_size().1, 1.0);
+    spawn(TextureType::EdgeRightUpper, position, scale);
+
+    let position = Vec3::new(0.0, top_position + FRAME_SYSTEM_HEIGHT / 2.0, 0.0);
+    let scale = Vec3::new(width / TextureType::Background.get_cell_size().0, FRAME_SYSTEM_HEIGHT / TextureType::Background.get_cell_size().1, 0.0);
+    spawn(TextureType::Background, position, scale);
+    
+    let position = Vec3::new(left_position + 6.0 + TextureType::Number.get_cell_size().0 / 2.0, top_position + TextureType::Number.get_cell_size().1 / 2.0 + 4.0, EPSILON);
+    let scale = Vec3::new(1.0, 1.0, 1.0);
+    spawn(TextureType::Number, position, scale);
+    
+    let position = Vec3::new(right_position - 8.0 - TextureType::Number.get_cell_size().0 / 2.0, top_position + TextureType::Number.get_cell_size().1 / 2.0 + 4.0, EPSILON);
+    let scale = Vec3::new(1.0, 1.0, 1.0);
+    spawn(TextureType::Number, position, scale);
+
+    let position = Vec3::new(0.0, top_position + TextureType::Smile.get_cell_size().1 / 2.0 + 3.0, EPSILON);
+    let scale = Vec3::new(1.0, 1.0, 1.0);
+    spawn(TextureType::Smile, position, scale);
+
+    let top_position = top_position + FRAME_SYSTEM_HEIGHT;
+
+    let position = Vec3::new(0.0, top_position + TextureType::EdgeTopUpper.get_cell_size().1 / 2.0, 0.0);
+    let scale = Vec3::new((width + 2.0) / TextureType::EdgeTopUpper.get_cell_size().0, 1.0, 1.0);
+    spawn(TextureType::EdgeTopUpper, position, scale);
+
+    let position = Vec3::new(left_position - TextureType::CornerLeftUpperTop.get_cell_size().0 / 2.0, top_position + TextureType::CornerLeftUpperTop.get_cell_size().1 / 2.0, 0.0);
+    let scale = Vec3::new(1.0, 1.0, 1.0);
+    spawn(TextureType::CornerLeftUpperTop, position, scale);
+
+    let position = Vec3::new(right_position + TextureType::CornerRightUpperTop.get_cell_size().0 / 2.0, top_position + TextureType::CornerRightUpperTop.get_cell_size().1 / 2.0, 0.0);
+    let scale = Vec3::new(1.0, 1.0, 1.0);
+    spawn(TextureType::CornerRightUpperTop, position, scale);
 }
 
 pub fn init_grid(
@@ -73,6 +181,7 @@ pub fn init_grid(
             spawn_cell(&mut commands, Cell::new(x, y, is_mine, num_mines_around), &mut grid, &texture_atlas_resource, cells_id);
         }
     }
+    spawn_frame(&mut commands, &mut grid, &texture_atlas_resource, cells_id);
 }
 
 fn update_cells_open(

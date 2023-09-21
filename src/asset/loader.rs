@@ -1,6 +1,6 @@
 use bevy::{prelude::*, utils::HashMap};
-
 use super::texture_type::TextureType;
+use strum::IntoEnumIterator;
 
 #[derive(Resource, Default)]
 pub struct TextureAtlasResource {
@@ -52,31 +52,31 @@ fn load_texture_as_atlas(handle: Handle<Image>,
 }
 
 fn load_texture(
-    atlas_type: TextureType,
+    texture_type: TextureType,
     option: AtlasOptions,
     asset_server: &AssetServer,
     texture_atlases: &mut Assets<TextureAtlas>,
     texture_atlas_resource: &mut TextureAtlasResource
 ) {
-    let texture_handle = asset_server.load(atlas_type.get_path());
+    let texture_handle = asset_server.load(texture_type.get_path());
     let texture_atlas = load_texture_as_atlas(texture_handle, option);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
-    texture_atlas_resource.handles.insert(atlas_type, texture_atlas_handle);
+    texture_atlas_resource.handles.insert(texture_type, texture_atlas_handle);
 }
 
 fn load_texture_with_type(
     asset_server: &AssetServer,
     texture_atlases: &mut Assets<TextureAtlas>,
     texture_atlas_resource: &mut TextureAtlasResource,
-    atlas_type: TextureType
+    texture_type: TextureType
 ) {
-    let width = atlas_type.get_cell_size().0;
-    let height = atlas_type.get_cell_size().1;
-    let columns = atlas_type.get_cell_size().2;
-    let rows = atlas_type.get_cell_size().3;
-    let horizontal_space = atlas_type.get_cell_size().4;
-    let vertical_gap = atlas_type.get_cell_size().5;
-    load_texture(atlas_type, 
+    let width = texture_type.get_cell_size().0;
+    let height = texture_type.get_cell_size().1;
+    let columns = texture_type.get_cell_size().2;
+    let rows = texture_type.get_cell_size().3;
+    let horizontal_space = texture_type.get_cell_size().4;
+    let vertical_gap = texture_type.get_cell_size().5;
+    load_texture(texture_type, 
         AtlasOptions { width, height, columns, rows, horizontal_space, vertical_gap}, 
         &asset_server, 
         texture_atlases, 
@@ -88,7 +88,7 @@ pub fn setup(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut texture_atlas_resource: ResMut<TextureAtlasResource>,
 ) {
-    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureType::Cells);
-    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureType::Smiles);
-    load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, TextureType::Numbers);
+    for texture_type in TextureType::iter() {
+        load_texture_with_type(&asset_server, &mut texture_atlases, &mut texture_atlas_resource, texture_type);
+    }
 }
