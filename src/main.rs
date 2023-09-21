@@ -10,6 +10,7 @@ pub mod grid;
 pub mod cell;
 pub mod system;
 pub mod mouse;
+pub mod number;
 pub mod game_state;
 pub mod window;
 
@@ -20,8 +21,8 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_state::<GameState>()
         .init_resource::<asset::loader::TextureAtlasResource>()
-        .init_resource::<grid::TotalMine>()
-        .init_resource::<grid::RemainingMine>()
+        .init_resource::<number::TotalMine>()
+        .init_resource::<number::RemainingMine>()
         .init_resource::<grid::Grid>()
         .add_systems(Startup, asset::loader::setup)
         .add_systems(PostStartup, system::spawn_camera)
@@ -29,7 +30,8 @@ fn main() {
         .add_systems(Update, mouse::mouse_events_system)
         .add_systems(Update, (
             system::update_cells,
-            system::update_cells_texture.after(system::update_cells)
+            system::update_cells_texture.after(system::update_cells),
+            system::update_mines.after(system::update_cells_texture),
         ).run_if(in_state(GameState::Ready).or_else(
             in_state(GameState::Playing)
         ))

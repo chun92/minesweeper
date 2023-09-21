@@ -1,9 +1,15 @@
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
+
 use super::grid::Grid;
-use super::grid::TotalMine;
 use super::cell::Cell;
+use super::number::TotalMine;
+use super::number::NumberType;
+use super::number::NumberTypeComponent;
+use super::number::NumberIndex;
+use super::number::NumberIndexComponent;
+use super::number::NumberSprite;
 use super::asset;
 use super::mouse;
 use super::asset::texture_type::TextureType;
@@ -137,18 +143,6 @@ fn spawn_frame(
     let scale = Vec3::new(width / TextureType::Background.get_cell_size().0, FRAME_SYSTEM_HEIGHT / TextureType::Background.get_cell_size().1, 0.0);
     spawn(TextureType::Background, position, scale);
     
-    let position = Vec3::new(left_position + 6.0 + TextureType::Number.get_cell_size().0 / 2.0, top_position + TextureType::Number.get_cell_size().1 / 2.0 + 4.0, EPSILON);
-    let scale = Vec3::new(1.0, 1.0, 1.0);
-    spawn(TextureType::Number, position, scale);
-    
-    let position = Vec3::new(right_position - 8.0 - TextureType::Number.get_cell_size().0 / 2.0, top_position + TextureType::Number.get_cell_size().1 / 2.0 + 4.0, EPSILON);
-    let scale = Vec3::new(1.0, 1.0, 1.0);
-    spawn(TextureType::Number, position, scale);
-
-    let position = Vec3::new(0.0, top_position + TextureType::Smile.get_cell_size().1 / 2.0 + 3.0, EPSILON);
-    let scale = Vec3::new(1.0, 1.0, 1.0);
-    spawn(TextureType::Smile, position, scale);
-
     let top_position = top_position + FRAME_SYSTEM_HEIGHT;
 
     let position = Vec3::new(0.0, top_position + TextureType::EdgeTopUpper.get_cell_size().1 / 2.0, 0.0);
@@ -162,6 +156,75 @@ fn spawn_frame(
     let position = Vec3::new(right_position + TextureType::CornerRightUpperTop.get_cell_size().0 / 2.0, top_position + TextureType::CornerRightUpperTop.get_cell_size().1 / 2.0, 0.0);
     let scale = Vec3::new(1.0, 1.0, 1.0);
     spawn(TextureType::CornerRightUpperTop, position, scale);
+
+    let top_position = top_position - FRAME_SYSTEM_HEIGHT;
+    
+    let mut spawn = |position: Vec3, number_type: NumberType| {
+        let texture_atlas_handle = texture_atlas_resource.handles.get(&TextureType::Number).unwrap();
+        commands.spawn((
+            NumberTypeComponent::new(number_type),
+            SpriteSheetBundle {
+                texture_atlas: texture_atlas_handle.clone(),
+                sprite: TextureAtlasSprite::new(NumberSprite::One as usize),
+                transform: Transform {
+                    translation: position,
+                    ..default()
+                },
+                ..default()
+            },
+        )).with_children(|commands| {
+            let texture_atlas_handle = texture_atlas_resource.handles.get(&TextureType::Numbers).unwrap();
+            commands.spawn((
+                NumberTypeComponent::new(number_type),
+                NumberIndexComponent::new(NumberIndex::First),
+                SpriteSheetBundle {
+                    texture_atlas: texture_atlas_handle.clone(),
+                    sprite: TextureAtlasSprite::new(NumberSprite::Zero as usize),
+                    transform: Transform {
+                        translation: Vec3::new(-TextureType::Numbers.get_cell_size().0, 1.0 / 2.0, position.z * 2.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+            ));
+            commands.spawn((
+                NumberTypeComponent::new(number_type),
+                NumberIndexComponent::new(NumberIndex::Second),
+                SpriteSheetBundle {
+                    texture_atlas: texture_atlas_handle.clone(),
+                    sprite: TextureAtlasSprite::new(NumberSprite::Zero as usize),
+                    transform: Transform {
+                        translation: Vec3::new(0.0, 1.0 / 2.0, position.z * 2.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+            ));
+            commands.spawn((
+                NumberTypeComponent::new(number_type),
+                NumberIndexComponent::new(NumberIndex::Third),
+                SpriteSheetBundle {
+                    texture_atlas: texture_atlas_handle.clone(),
+                    sprite: TextureAtlasSprite::new(NumberSprite::Zero as usize),
+                    transform: Transform {
+                        translation: Vec3::new(TextureType::Numbers.get_cell_size().0,  1.0 / 2.0, position.z * 2.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+            ));
+        }).set_parent(frame_id);
+    };
+    
+    let position = Vec3::new(left_position + 6.0 + TextureType::Number.get_cell_size().0 / 2.0, top_position + TextureType::Number.get_cell_size().1 / 2.0 + 4.0, EPSILON);
+    spawn(position, NumberType::MineCount);
+    
+    let position = Vec3::new(right_position - 8.0 - TextureType::Number.get_cell_size().0 / 2.0, top_position + TextureType::Number.get_cell_size().1 / 2.0 + 4.0, EPSILON);
+    spawn(position, NumberType::Time);
+
+    // let position = Vec3::new(0.0, top_position + TextureType::Smile.get_cell_size().1 / 2.0 + 3.0, EPSILON);
+    // let scale = Vec3::new(1.0, 1.0, 1.0);
+    // spawn(TextureType::Smile, position, scale);
 }
 
 pub fn init_grid(
@@ -397,5 +460,36 @@ pub fn bomb(
 ) {
     for mut cell in q_cells.iter_mut() {
         cell.bomb();
+    }
+}
+
+pub fn update_mines(
+    q_cells: Query<&Cell>,
+    mut q_mines: Query<(&NumberTypeComponent, &NumberIndexComponent, &mut TextureAtlasSprite)>,
+    total_mine: Res<super::number::TotalMine>,
+    mut remaining_mine: ResMut<super::number::RemainingMine>,
+) {
+    let mut num_of_flagged = 0;
+    for cell in q_cells.iter() {
+        if cell.state == super::cell::CellState::Flagged || cell.state == super::cell::CellState::WrongFlagged {
+            num_of_flagged += 1;
+        }
+    }
+    let cur_left_mine = total_mine.0 as i32 - num_of_flagged;
+    if remaining_mine.0 != cur_left_mine {
+        remaining_mine.0 = cur_left_mine;
+        let (first, second, third) = super::number::get_number_sprites(remaining_mine.0);
+        for (number_type, number_index, mut sprite) in q_mines.iter_mut() {
+            if number_type.0 != NumberType::MineCount {
+                continue;
+            }
+            if number_type.0 == NumberType::MineCount && number_index.0 == NumberIndex::First {
+                sprite.index = first as usize;
+            } else if number_type.0 == NumberType::MineCount && number_index.0 == NumberIndex::Second {
+                sprite.index = second as usize;
+            } else if number_type.0 == NumberType::MineCount && number_index.0 == NumberIndex::Third {
+                sprite.index = third as usize;
+            }
+        }        
     }
 }

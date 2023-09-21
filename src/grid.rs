@@ -142,15 +142,3 @@ impl Grid {
         num_mines_around
     }
 }
-
-#[derive(Resource)]
-pub struct TotalMine(pub u32);
-
-impl Default for TotalMine {
-    fn default() -> Self {
-        Self(99)
-    }
-}
-
-#[derive(Resource, Default)]
-pub struct RemainingMine(pub u32);
