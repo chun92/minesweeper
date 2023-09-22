@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::ui::update;
 use bevy::window::PrimaryWindow;
 
 
@@ -294,14 +295,6 @@ fn plant_mines_cells(
     }
 }
 
-pub fn update_cells_texture_for_ready(
-    mut q_cells: Query<(&Cell, &mut TextureAtlasSprite)>,
-) {
-    for (cell, mut sprite) in q_cells.iter_mut() {
-        sprite.index = cell.get_texture_index() as usize;
-    }
-}
-
 pub fn first_click_cell(
     mut q_cells: Query<&mut Cell>,
     mut grid: ResMut<Grid>,
@@ -517,12 +510,30 @@ pub fn update_cells(
     }
 }
 
-pub fn update_cells_texture(
-    mut q_cells: Query<(&Cell, &mut TextureAtlasSprite)>,
+fn update_cells_texture(
+    q_cells: &mut Query<(&Cell, &mut TextureAtlasSprite)>,
 ) {
     for (cell, mut sprite) in q_cells.iter_mut() {
         sprite.index = cell.get_texture_index() as usize;
     }
+}
+
+pub fn update_cells_texture_for_playing(
+    mut q_cells: Query<(&Cell, &mut TextureAtlasSprite)>,
+) {
+    update_cells_texture(&mut q_cells);
+}
+
+pub fn update_cells_texture_for_defeat(
+    mut q_cells: Query<(&Cell, &mut TextureAtlasSprite)>,
+) {
+    update_cells_texture(&mut q_cells);
+}
+
+pub fn update_cells_texture_for_ready(
+    mut q_cells: Query<(&Cell, &mut TextureAtlasSprite)>,
+) {
+    update_cells_texture(&mut q_cells);
 }
 
 pub fn bomb(
@@ -533,7 +544,7 @@ pub fn bomb(
     }
 }
 
-pub fn update_mines(
+fn update_mines(
     q_cells: Query<&Cell>,
     mut q_mines: Query<(&NumberTypeComponent, &NumberIndexComponent, &mut TextureAtlasSprite)>,
     total_mine: Res<super::number::TotalMine>,
@@ -562,4 +573,22 @@ pub fn update_mines(
             }
         }        
     }
+}
+
+pub fn update_mines_for_playing(
+    q_cells: Query<&Cell>,
+    q_mines: Query<(&NumberTypeComponent, &NumberIndexComponent, &mut TextureAtlasSprite)>,
+    total_mine: Res<super::number::TotalMine>,
+    remaining_mine: ResMut<super::number::RemainingMine>,
+) {
+    update_mines(q_cells, q_mines, total_mine, remaining_mine);
+}
+
+pub fn update_mines_for_ready(
+    q_cells: Query<&Cell>,
+    q_mines: Query<(&NumberTypeComponent, &NumberIndexComponent, &mut TextureAtlasSprite)>,
+    total_mine: Res<super::number::TotalMine>,
+    remaining_mine: ResMut<super::number::RemainingMine>,
+) {
+    update_mines(q_cells, q_mines, total_mine, remaining_mine);
 }

@@ -32,16 +32,17 @@ fn main() {
         .add_systems(Update, (
             system::update_cells_texture_for_ready,
             system::first_click_cell.after(system::update_cells_texture_for_ready),
+            system::update_mines_for_ready.after(system::first_click_cell),
         )
         .run_if(in_state(GameState::Ready)))
         .add_systems(Update, (
             system::update_cells,
-            system::update_cells_texture.after(system::update_cells),
-            system::update_mines.after(system::update_cells_texture),
+            system::update_cells_texture_for_playing.after(system::update_cells),
+            system::update_mines_for_playing.after(system::update_cells_texture_for_playing),
         ).run_if(in_state(GameState::Playing)))
         .add_systems(OnEnter(GameState::Defeated), (
             system::bomb,
-            system::update_cells_texture.after(system::bomb)
+            system::update_cells_texture_for_defeat.after(system::bomb)
         ))
         .run();
 }
