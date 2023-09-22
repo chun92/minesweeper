@@ -28,14 +28,17 @@ fn main() {
         .add_systems(PostStartup, system::spawn_camera)
         .add_systems(PostStartup, system::init_grid)
         .add_systems(Update, mouse::mouse_events_system)
+        .add_systems(OnEnter(GameState::Ready), system::reset_cells)
+        .add_systems(Update, (
+            system::update_cells_texture_for_ready,
+            system::first_click_cell.after(system::update_cells_texture_for_ready),
+        )
+        .run_if(in_state(GameState::Ready)))
         .add_systems(Update, (
             system::update_cells,
             system::update_cells_texture.after(system::update_cells),
             system::update_mines.after(system::update_cells_texture),
-        ).run_if(in_state(GameState::Ready).or_else(
-            in_state(GameState::Playing)
-        ))
-        )
+        ).run_if(in_state(GameState::Playing)))
         .add_systems(OnEnter(GameState::Defeated), (
             system::bomb,
             system::update_cells_texture.after(system::bomb)

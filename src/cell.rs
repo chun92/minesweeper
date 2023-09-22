@@ -45,6 +45,18 @@ impl Cell {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.state = CellState::Hidden;
+        self.is_left_pressed = false;
+        self.is_opening = false;
+        self.query_state = QueryState::None;
+    }
+
+    pub fn change_mine(&mut self, is_mine: bool, num_mines_around: u32) {
+        self.is_mine = is_mine;
+        self.num_mines_around = num_mines_around;
+    }
+
     pub fn get_position(&self, grid: &Grid) -> Vec3 {
         assert!(self.x <= grid.width);
         assert!(self.y <= grid.height);

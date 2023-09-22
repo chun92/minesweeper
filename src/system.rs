@@ -234,25 +234,95 @@ pub fn init_grid(
     q_windows: Query<&Window, With<PrimaryWindow>>,
     texture_atlas_resource: Res<asset::loader::TextureAtlasResource>,
 ) {
+    let frame_id = spawn_grid(&mines, &mut commands, &mut grid, &q_windows);
+    spawn_cells(&mut commands, &mut grid, &texture_atlas_resource, frame_id);
+    spawn_frame(&mut commands, &mut grid, &texture_atlas_resource, frame_id);
+}
+
+fn spawn_grid(
+    mines: &TotalMine,
+    commands: &mut Commands,
+    grid: &mut Grid,
+    q_windows: &Query<&Window, With<PrimaryWindow>>
+) -> Entity {
     let window_width = q_windows.single().physical_width() as f32;
     let window_height = q_windows.single().physical_height() as f32;
     grid.init(30, 16, window_width, window_height);
-    grid.create_mine_positions(mines.0);
-    let mine_positions = &grid.mine_positions.clone();
+    grid.create_mine_positions(mines.0, None);
     
-    let frame_id = commands.spawn((
+    commands.spawn((
         Frame::new(),
         SpatialBundle::default()
-    )).id();
+    )).id()
+}
 
+fn spawn_cells(
+    commands: &mut Commands,
+    grid: &mut Grid,
+    texture_atlas_resource: &asset::loader::TextureAtlasResource,
+    frame_id: Entity,
+) {
+    let mine_positions = &grid.mine_positions.clone();
     for x in 1..=grid.width {
         for y in 1..=grid.height {
             let is_mine = mine_positions.contains(&(x, y));
             let num_mines_around = grid.get_num_mines_around(x, y);
-            spawn_cell(&mut commands, Cell::new(x, y, is_mine, num_mines_around), &mut grid, &texture_atlas_resource, frame_id);
+            spawn_cell(commands, Cell::new(x, y, is_mine, num_mines_around), grid, &texture_atlas_resource, frame_id);
         }
     }
-    spawn_frame(&mut commands, &mut grid, &texture_atlas_resource, frame_id);
+}
+
+pub fn reset_cells(
+    mut q_cells: Query<&mut Cell>,
+) {
+    for mut cell in q_cells.iter_mut() {
+        cell.reset();
+    }
+}
+
+fn plant_mines_cells(
+    q_cells: &mut Query<&mut Cell>,
+    grid: &mut Grid,
+) {
+    let mine_positions = &grid.mine_positions.clone();
+    for mut cell in q_cells.iter_mut() {
+        let x = cell.x;
+        let y = cell.y;
+        let is_mine = mine_positions.contains(&(x, y));
+        let num_mines_around = grid.get_num_mines_around(x, y);
+        cell.change_mine(is_mine, num_mines_around)
+    }
+}
+
+pub fn update_cells_texture_for_ready(
+    mut q_cells: Query<(&Cell, &mut TextureAtlasSprite)>,
+) {
+    for (cell, mut sprite) in q_cells.iter_mut() {
+        sprite.index = cell.get_texture_index() as usize;
+    }
+}
+
+pub fn first_click_cell(
+    mut q_cells: Query<&mut Cell>,
+    mut grid: ResMut<Grid>,
+    mut next_state: ResMut<NextState<super::game_state::GameState>>,
+    mines: Res<TotalMine>,
+) {
+    let mut queue: Vec<(u32, u32)> = Vec::new();
+    for cell in q_cells.iter_mut() {
+        if cell.is_opening {
+            queue.push((cell.x, cell.y));
+        }
+    }
+
+    if queue.len() == 0 {
+        return;
+    }
+
+    let (x, y) = queue.pop().unwrap();
+    grid.create_mine_positions(mines.0, Some((x, y)));
+    plant_mines_cells(&mut q_cells, &mut grid);
+    next_state.set(super::game_state::GameState::Playing);
 }
 
 fn update_cells_open(

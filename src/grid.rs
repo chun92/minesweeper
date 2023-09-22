@@ -53,7 +53,7 @@ impl Grid {
         self.cells.clear();
     }
 
-    pub fn create_mine_positions(&mut self, num_mines: u32) {
+    pub fn create_mine_positions(&mut self, num_mines: u32, exclude_pos: Option<(u32, u32)>) {
         let mut rng = rand::thread_rng();
         
         let num_mines = if num_mines > self.width * self.height {
@@ -66,6 +66,10 @@ impl Grid {
         let mut positions: Vec<(u32, u32)> = (1..=self.width)
             .flat_map(|x| (1..=self.height).map(move |y| (x, y)))
             .collect();
+
+        if let Some ((x, y)) = exclude_pos {
+            positions.retain(|(x_, y_)| *x_ != x || *y_ != y);
+        }
     
         positions.shuffle(&mut rng);
     
