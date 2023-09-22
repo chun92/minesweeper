@@ -2,7 +2,9 @@
 
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-use super::cell::Cell;
+use crate::component::cell::Cell;
+use crate::component::smile::SmileComponent;
+use crate::system::game_state::GameState;
 
 #[derive(Component)]
 pub struct Clickable(pub Vec3, pub f32, pub f32);
@@ -22,8 +24,8 @@ pub fn mouse_events_system(
     buttons: Res<Input<MouseButton>>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
     mut q_cells: Query<(&mut Cell, &Clickable)>,
-    mut q_smiles: Query<(&mut super::smile::SmileComponent, &Clickable)>,
-    mut next_state: ResMut<NextState<super::game_state::GameState>>,
+    mut q_smiles: Query<(&mut SmileComponent, &Clickable)>,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
     if buttons.pressed(MouseButton::Left) {
         if let Some(position) = q_windows.single().cursor_position() {

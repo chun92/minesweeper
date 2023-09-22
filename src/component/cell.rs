@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use super::grid::Grid;
-use super::asset::texture_type::TextureType;
+use crate::component::grid::Grid;
+use crate::asset::texture_type::TextureType;
 
 #[derive(PartialEq, Eq)]
 pub enum CellState {

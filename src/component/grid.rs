@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy::utils::HashSet;
 use rand::seq::SliceRandom;
 
-use super::asset::texture_type::TextureType;
+use crate::asset::texture_type::TextureType;
 #[derive(Resource)]
 pub struct Grid {
     pub width: u32,

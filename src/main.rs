@@ -1,19 +1,37 @@
-use bevy::prelude::*;
-use game_state::GameState;
-
 pub mod asset {
     pub mod loader;
     pub mod texture_type;
 }
 
-pub mod grid;
-pub mod cell;
-pub mod system;
-pub mod mouse;
-pub mod number;
-pub mod smile;
-pub mod game_state;
-pub mod window;
+pub mod component {
+    pub mod cell;
+    pub mod smile;
+    pub mod number;
+    pub mod mine;
+    pub mod grid;
+    pub mod frame;
+}
+
+pub mod system {
+    pub mod game_state;
+    pub mod mouse;
+    pub mod window;
+}
+
+pub mod core {
+    pub mod init {
+        pub mod camera;
+        pub mod grid;
+    }
+    pub mod update {
+        pub mod cells;
+        pub mod mines;
+        pub mod smiles;
+    }
+}
+
+use bevy::prelude::*;
+use system::game_state::GameState;
 
 fn main() {
     std::env::set_var("RUST_BACKTRACE", "1");
@@ -22,29 +40,29 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_state::<GameState>()
         .init_resource::<asset::loader::TextureAtlasResource>()
-        .init_resource::<number::TotalMine>()
-        .init_resource::<number::RemainingMine>()
-        .init_resource::<grid::Grid>()
+        .init_resource::<component::mine::TotalMine>()
+        .init_resource::<component::mine::RemainingMine>()
+        .init_resource::<component::grid::Grid>()
         .add_systems(Startup, asset::loader::setup)
-        .add_systems(PostStartup, system::spawn_camera)
-        .add_systems(PostStartup, system::init_grid)
-        .add_systems(Update, mouse::mouse_events_system)
-        .add_systems(Update, system::update_smiles)
-        .add_systems(OnEnter(GameState::Ready), system::reset_cells)
+        .add_systems(PostStartup, core::init::camera::init)
+        .add_systems(PostStartup, core::init::grid::init)
+        .add_systems(Update, system::mouse::mouse_events_system)
+        .add_systems(Update, core::update::smiles::update)
+        .add_systems(OnEnter(GameState::Ready), core::update::cells::reset)
         .add_systems(Update, (
-            system::update_cells_texture_for_ready,
-            system::first_click_cell.after(system::update_cells_texture_for_ready),
-            system::update_mines_for_ready.after(system::first_click_cell),
+            core::update::cells::texture_for_ready,
+            core::update::cells::first_click.after(core::update::cells::texture_for_ready),
+            core::update::mines::update_for_ready.after(core::update::cells::first_click),
         )
         .run_if(in_state(GameState::Ready)))
         .add_systems(Update, (
-            system::update_cells,
-            system::update_cells_texture_for_playing.after(system::update_cells),
-            system::update_mines_for_playing.after(system::update_cells_texture_for_playing),
+            core::update::cells::update,
+            core::update::cells::texture_for_playing.after(core::update::cells::update),
+            core::update::mines::update_for_playing.after(core::update::cells::texture_for_playing),
         ).run_if(in_state(GameState::Playing)))
         .add_systems(OnEnter(GameState::Defeated), (
-            system::bomb,
-            system::update_cells_texture_for_defeat.after(system::bomb)
+            core::update::cells::bomb,
+            core::update::cells::texture_for_defeat.after(core::update::cells::bomb)
         ))
         .run();
 }

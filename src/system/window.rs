@@ -1,8 +1,5 @@
 use bevy::prelude::*;
 
-use super::grid::Grid;
-use super::asset;
-
 #[derive(Resource, Default)]
 pub struct WindowSize(pub Vec2);
 

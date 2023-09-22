@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::system::game_state::GameState;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum SmileSprite {
@@ -32,12 +33,12 @@ impl SmileComponent {
     }
 
     pub fn released(&mut self, 
-        next_state: &mut NextState<super::game_state::GameState>) {
+        next_state: &mut NextState<GameState>) {
         if !self.is_pressed {
             return;
         }
         self.is_pressed = false;
         self.state = SmileSprite::Normal;
-        next_state.set(super::game_state::GameState::Ready);
+        next_state.set(GameState::Ready);
     }
 }
