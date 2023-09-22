@@ -1,7 +1,5 @@
 use bevy::prelude::*;
-use bevy::ui::update;
 use bevy::window::PrimaryWindow;
-
 
 use super::grid::Grid;
 use super::cell::Cell;
@@ -11,6 +9,8 @@ use super::number::NumberTypeComponent;
 use super::number::NumberIndex;
 use super::number::NumberIndexComponent;
 use super::number::NumberSprite;
+use super::smile::SmileComponent;
+use super::smile::SmileSprite;
 use super::asset;
 use super::mouse;
 use super::asset::texture_type::TextureType;
@@ -141,7 +141,7 @@ fn spawn_frame(
     spawn(TextureType::EdgeRightUpper, position, scale);
 
     let position = Vec3::new(0.0, top_position + FRAME_SYSTEM_HEIGHT / 2.0, 0.0);
-    let scale = Vec3::new(width / TextureType::Background.get_cell_size().0, FRAME_SYSTEM_HEIGHT / TextureType::Background.get_cell_size().1, 0.0);
+    let scale = Vec3::new(width / TextureType::Background.get_cell_size().0 + 1.0, FRAME_SYSTEM_HEIGHT / TextureType::Background.get_cell_size().1, 0.0);
     spawn(TextureType::Background, position, scale);
     
     let top_position = top_position + FRAME_SYSTEM_HEIGHT;
@@ -163,10 +163,9 @@ fn spawn_frame(
     let mut spawn = |position: Vec3, number_type: NumberType| {
         let texture_atlas_handle = texture_atlas_resource.handles.get(&TextureType::Number).unwrap();
         commands.spawn((
-            NumberTypeComponent::new(number_type),
             SpriteSheetBundle {
                 texture_atlas: texture_atlas_handle.clone(),
-                sprite: TextureAtlasSprite::new(NumberSprite::One as usize),
+                sprite: TextureAtlasSprite::new(0),
                 transform: Transform {
                     translation: position,
                     ..default()
@@ -182,7 +181,7 @@ fn spawn_frame(
                     texture_atlas: texture_atlas_handle.clone(),
                     sprite: TextureAtlasSprite::new(NumberSprite::Zero as usize),
                     transform: Transform {
-                        translation: Vec3::new(-TextureType::Numbers.get_cell_size().0, 1.0 / 2.0, position.z * 2.0),
+                        translation: Vec3::new(-TextureType::Numbers.get_cell_size().0, 0.0, position.z * 2.0),
                         ..default()
                     },
                     ..default()
@@ -195,7 +194,7 @@ fn spawn_frame(
                     texture_atlas: texture_atlas_handle.clone(),
                     sprite: TextureAtlasSprite::new(NumberSprite::Zero as usize),
                     transform: Transform {
-                        translation: Vec3::new(0.0, 1.0 / 2.0, position.z * 2.0),
+                        translation: Vec3::new(0.0, 0.0, position.z * 2.0),
                         ..default()
                     },
                     ..default()
@@ -208,7 +207,7 @@ fn spawn_frame(
                     texture_atlas: texture_atlas_handle.clone(),
                     sprite: TextureAtlasSprite::new(NumberSprite::Zero as usize),
                     transform: Transform {
-                        translation: Vec3::new(TextureType::Numbers.get_cell_size().0,  1.0 / 2.0, position.z * 2.0),
+                        translation: Vec3::new(TextureType::Numbers.get_cell_size().0,  0.0, position.z * 2.0),
                         ..default()
                     },
                     ..default()
@@ -222,10 +221,42 @@ fn spawn_frame(
     
     let position = Vec3::new(right_position - 8.0 - TextureType::Number.get_cell_size().0 / 2.0, top_position + TextureType::Number.get_cell_size().1 / 2.0 + 4.0, EPSILON);
     spawn(position, NumberType::Time);
-
-    // let position = Vec3::new(0.0, top_position + TextureType::Smile.get_cell_size().1 / 2.0 + 3.0, EPSILON);
-    // let scale = Vec3::new(1.0, 1.0, 1.0);
-    // spawn(TextureType::Smile, position, scale);
+    
+    let mut spawn = |position: Vec3| {
+        let texture_atlas_handle = texture_atlas_resource.handles.get(&TextureType::Smile).unwrap();
+        commands.spawn((
+            SpriteSheetBundle {
+                texture_atlas: texture_atlas_handle.clone(),
+                sprite: TextureAtlasSprite::new(0),
+                transform: Transform {
+                    translation: position,
+                    ..default()
+                },
+                ..default()
+            },
+        )).with_children(|commands| {
+            let texture_atlas_handle = texture_atlas_resource.handles.get(&TextureType::Smiles).unwrap();
+            commands.spawn((
+                SmileComponent::new(),
+                SpriteSheetBundle {
+                    texture_atlas: texture_atlas_handle.clone(),
+                    sprite: TextureAtlasSprite::new(SmileSprite::Normal as usize),
+                    transform: Transform {
+                        translation: Vec3::new(0.0, 0.0, position.z * 2.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+                mouse::Clickable(
+                    Vec3::new(position.x + grid.window_position.x, -position.y + grid.window_position.y, 0.0), 
+                        TextureType::Smiles.get_cell_size().0, 
+                        TextureType::Smiles.get_cell_size().1),
+            ));
+        }).set_parent(frame_id);
+    };
+    
+    let position = Vec3::new(0.0, top_position + TextureType::Smile.get_cell_size().1 / 2.0 + 3.0, EPSILON);
+    spawn(position);
 }
 
 pub fn init_grid(
@@ -591,4 +622,12 @@ pub fn update_mines_for_ready(
     remaining_mine: ResMut<super::number::RemainingMine>,
 ) {
     update_mines(q_cells, q_mines, total_mine, remaining_mine);
+}
+
+pub fn update_smiles(
+    mut q_smiles: Query<(&SmileComponent, &mut TextureAtlasSprite)>
+) {
+    for (smile, mut sprite) in q_smiles.iter_mut() {
+        sprite.index = smile.state as usize;
+    }
 }

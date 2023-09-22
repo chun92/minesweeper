@@ -22,6 +22,8 @@ pub fn mouse_events_system(
     buttons: Res<Input<MouseButton>>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
     mut q_cells: Query<(&mut Cell, &Clickable)>,
+    mut q_smiles: Query<(&mut super::smile::SmileComponent, &Clickable)>,
+    mut next_state: ResMut<NextState<super::game_state::GameState>>,
 ) {
     if buttons.pressed(MouseButton::Left) {
         if let Some(position) = q_windows.single().cursor_position() {
@@ -36,6 +38,14 @@ pub fn mouse_events_system(
                     }                   
                 }
             }
+
+            for (mut smile, clickable) in q_smiles.iter_mut() {
+                if clickable.is_inside(position) {
+                    if !smile.is_pressed {
+                        smile.pressed();
+                    }
+                }
+            }
         }
     }
 
@@ -46,6 +56,12 @@ pub fn mouse_events_system(
                     if cell.is_left_pressed {
                         cell.left_released();
                     }
+                }
+            }
+
+            for (mut smile, _) in q_smiles.iter_mut() {
+                if smile.is_pressed {
+                    smile.released(&mut next_state);
                 }
             }
         }

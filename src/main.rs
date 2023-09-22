@@ -11,6 +11,7 @@ pub mod cell;
 pub mod system;
 pub mod mouse;
 pub mod number;
+pub mod smile;
 pub mod game_state;
 pub mod window;
 
@@ -28,6 +29,7 @@ fn main() {
         .add_systems(PostStartup, system::spawn_camera)
         .add_systems(PostStartup, system::init_grid)
         .add_systems(Update, mouse::mouse_events_system)
+        .add_systems(Update, system::update_smiles)
         .add_systems(OnEnter(GameState::Ready), system::reset_cells)
         .add_systems(Update, (
             system::update_cells_texture_for_ready,
