@@ -251,6 +251,7 @@ fn spawn_grid(
     grid.init(10, 10);
     mines.init(10);
     let window_size = grid.grid_window_size;
+    q_windows.single_mut().resizable = false;
     q_windows.single_mut().resolution = WindowResolution::new(window_size.x + MARGIN_LEFT + MARGIN_RIGHT, window_size.y + MARGIN_UP + MARGIN_DOWN);
     grid.create_mine_positions(mines.0, None);
     
