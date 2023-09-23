@@ -123,7 +123,7 @@ fn spawn_frame(
     spawn(TextureType::EdgeRightUpper, position, scale);
 
     let position = Vec3::new(0.0, top_position + FRAME_SYSTEM_HEIGHT / 2.0, 0.0);
-    let scale = Vec3::new(width / TextureType::Background.get_cell_size().0 + 1.0, FRAME_SYSTEM_HEIGHT / TextureType::Background.get_cell_size().1, 0.0);
+    let scale = Vec3::new(width / TextureType::Background.get_cell_size().0 + 2.0, FRAME_SYSTEM_HEIGHT / TextureType::Background.get_cell_size().1, -EPSILON);
     spawn(TextureType::Background, position, scale);
     
     let top_position = top_position + FRAME_SYSTEM_HEIGHT;
