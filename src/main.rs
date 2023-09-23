@@ -15,7 +15,6 @@ pub mod component {
 pub mod system {
     pub mod game_state;
     pub mod mouse;
-    pub mod window;
     pub mod timer;
 }
 

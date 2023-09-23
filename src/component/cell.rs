@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::component::grid::Grid;
+use crate::component::grid::{Grid, MARGIN_X, MARGIN_Y};
 use crate::asset::texture_type::TextureType;
 
 #[derive(PartialEq, Eq)]
@@ -67,8 +67,8 @@ impl Cell {
         let height_pixel = TextureType::Cells.get_cell_size().1;
         let x_offset = grid.width as f32 * width_pixel / 2.0;
         let y_offset = grid.height as f32 * height_pixel / 2.0;
-        let x = (self.x - 1) as f32 * width_pixel + width_pixel / 2.0 - x_offset;
-        let y = (self.y - 1) as f32 * height_pixel + height_pixel / 2.0 - y_offset;
+        let x = (self.x - 1) as f32 * width_pixel + width_pixel / 2.0 - x_offset + MARGIN_X;
+        let y = (self.y - 1) as f32 * height_pixel + height_pixel / 2.0 - y_offset + MARGIN_Y;
         Vec3::new(x, y, 0.0)
     }
 

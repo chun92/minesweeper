@@ -1,7 +1,7 @@
 use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
+use bevy::window::{PrimaryWindow, WindowResolution};
 
-use crate::component::grid::Grid;
+use crate::component::grid::{Grid, MARGIN_UP, MARGIN_DOWN, MARGIN_LEFT, MARGIN_RIGHT, MARGIN_X, MARGIN_Y};
 use crate::component::cell::Cell;
 use crate::component::smile::{SmileComponent, SmileSprite};
 use crate::component::number::{NumberSprite, NumberType, NumberTypeComponent, NumberIndex, NumberIndexComponent};
@@ -55,8 +55,8 @@ fn spawn_frame(
     texture_atlas_resource: &asset::loader::TextureAtlasResource,
     frame_id: Entity,
 ) {
-    let width = grid.window_size.x;
-    let height = grid.window_size.y;
+    let width = grid.grid_window_size.x;
+    let height = grid.grid_window_size.y;
     let left_position = -width / 2.0;
     let right_position = width / 2.0;
     let top_position = height / 2.0;
@@ -69,7 +69,7 @@ fn spawn_frame(
                 texture_atlas: texture_atlas_handle.clone(),
                 sprite: TextureAtlasSprite::new(0),
                 transform: Transform {
-                    translation: position,
+                    translation: Vec3::new(position.x + MARGIN_X, position.y + 1.0 + MARGIN_Y, position.z),
                     scale: scale,
                     ..default()
                 },
@@ -149,7 +149,7 @@ fn spawn_frame(
                 texture_atlas: texture_atlas_handle.clone(),
                 sprite: TextureAtlasSprite::new(0),
                 transform: Transform {
-                    translation: position,
+                    translation: Vec3::new(position.x + MARGIN_X, position.y + MARGIN_Y, position.z),
                     ..default()
                 },
                 ..default()
@@ -205,6 +205,7 @@ fn spawn_frame(
     spawn(position, NumberType::Time);
     
     let mut spawn = |position: Vec3| {
+        let position = Vec3::new(position.x + MARGIN_X, position.y + MARGIN_Y, position.z);
         let texture_atlas_handle = texture_atlas_resource.handles.get(&TextureType::Smile).unwrap();
         commands.spawn((
             SpriteSheetBundle {
@@ -245,11 +246,11 @@ fn spawn_grid(
     mines: &TotalMine,
     commands: &mut Commands,
     grid: &mut Grid,
-    q_windows: &Query<&Window, With<PrimaryWindow>>
+    q_windows: &mut Query<&mut Window, With<PrimaryWindow>>
 ) -> Entity {
-    let window_width = q_windows.single().physical_width() as f32;
-    let window_height = q_windows.single().physical_height() as f32;
-    grid.init(30, 16, window_width, window_height);
+    grid.init(30, 16);
+    let window_size = grid.grid_window_size;
+    q_windows.single_mut().resolution = WindowResolution::new(window_size.x + MARGIN_LEFT + MARGIN_RIGHT, window_size.y + MARGIN_UP + MARGIN_DOWN);
     grid.create_mine_positions(mines.0, None);
     
     commands.spawn((
@@ -278,10 +279,10 @@ pub fn init(
     mut commands: Commands,
     mines: Res<TotalMine>,
     mut grid: ResMut<Grid>,
-    q_windows: Query<&Window, With<PrimaryWindow>>,
+    mut q_windows: Query<&mut Window, With<PrimaryWindow>>,
     texture_atlas_resource: Res<asset::loader::TextureAtlasResource>,
 ) {
-    let frame_id = spawn_grid(&mines, &mut commands, &mut grid, &q_windows);
+    let frame_id = spawn_grid(&mines, &mut commands, &mut grid, &mut q_windows);
     spawn_cells(&mut commands, &mut grid, &texture_atlas_resource, frame_id);
     spawn_frame(&mut commands, &mut grid, &texture_atlas_resource, frame_id);
 }

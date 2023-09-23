@@ -9,9 +9,16 @@ pub struct Grid {
     pub height: u32,
     pub mine_positions: HashSet<(u32, u32)>,
     pub window_position: Vec2,
-    pub window_size: Vec2,
+    pub grid_window_size: Vec2,
     pub cells: Vec<(u32, u32, Entity)>,
 }
+
+pub const MARGIN_UP: f32 = 56.0;
+pub const MARGIN_DOWN: f32 = 8.0;
+pub const MARGIN_LEFT: f32 = 12.0;
+pub const MARGIN_RIGHT: f32 = 8.0;
+pub const MARGIN_X: f32 = (MARGIN_LEFT - MARGIN_RIGHT) / 2.0;
+pub const MARGIN_Y: f32 = (MARGIN_DOWN - MARGIN_UP) / 2.0;
 
 impl Default for Grid {
     fn default() -> Self {
@@ -20,7 +27,7 @@ impl Default for Grid {
             height: 16,
             mine_positions: HashSet::new(),
             window_position: Vec2::new(0.0, 0.0),
-            window_size: Vec2::new(0.0, 0.0),
+            grid_window_size: Vec2::new(0.0, 0.0),
             cells: Vec::new(),
         }
     }
@@ -35,8 +42,6 @@ impl Grid {
         &mut self,
         width: u32,
         height: u32,
-        window_width: f32,
-        window_height: f32,
     ) {
         self.width = width;
         self.height = height;
@@ -47,8 +52,9 @@ impl Grid {
         let grid_width = cell_width * self.width as f32;
         let grid_height = cell_height * self.height as f32;
     
-        self.window_position = Vec2::new(window_width / 2.0, window_height / 2.0);
-        self.window_size = Vec2::new(grid_width, grid_height);
+        self.window_position = Vec2::new((grid_width + MARGIN_LEFT + MARGIN_RIGHT) / 2.0, 
+            (grid_height + MARGIN_UP + MARGIN_DOWN) / 2.0);
+        self.grid_window_size = Vec2::new(grid_width, grid_height);
 
         self.cells.clear();
     }
