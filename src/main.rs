@@ -16,6 +16,7 @@ pub mod system {
     pub mod game_state;
     pub mod mouse;
     pub mod window;
+    pub mod timer;
 }
 
 pub mod core {
@@ -27,6 +28,7 @@ pub mod core {
         pub mod cells;
         pub mod mines;
         pub mod smiles;
+        pub mod time;
     }
 }
 
@@ -40,21 +42,29 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_state::<GameState>()
         .init_resource::<asset::loader::TextureAtlasResource>()
+        .init_resource::<system::timer::Timer>()
         .init_resource::<component::mine::TotalMine>()
         .init_resource::<component::mine::RemainingMine>()
         .init_resource::<component::grid::Grid>()
         .add_systems(Startup, asset::loader::setup)
         .add_systems(PostStartup, core::init::camera::init)
         .add_systems(PostStartup, core::init::grid::init)
-        .add_systems(Update, system::mouse::mouse_events_system)
-        .add_systems(Update, core::update::smiles::update)
-        .add_systems(OnEnter(GameState::Ready), core::update::cells::reset)
+        .add_systems(Update, (
+            system::mouse::mouse_events_system,
+            core::update::smiles::update,
+            core::update::time::update,
+        ))
+        .add_systems(OnEnter(GameState::Ready), (
+            core::update::cells::reset,
+            core::update::time::reset,
+        ))
         .add_systems(Update, (
             core::update::cells::texture_for_ready,
             core::update::cells::first_click.after(core::update::cells::texture_for_ready),
             core::update::mines::update_for_ready.after(core::update::cells::first_click),
         )
         .run_if(in_state(GameState::Ready)))
+        .add_systems(OnEnter(GameState::Playing), core::update::time::start)
         .add_systems(Update, (
             core::update::cells::update,
             core::update::cells::texture_for_playing.after(core::update::cells::update),
@@ -62,7 +72,8 @@ fn main() {
         ).run_if(in_state(GameState::Playing)))
         .add_systems(OnEnter(GameState::Defeated), (
             core::update::cells::bomb,
-            core::update::cells::texture_for_defeat.after(core::update::cells::bomb)
+            core::update::cells::texture_for_defeat.after(core::update::cells::bomb),
+            core::update::time::stop
         ))
         .run();
 }

@@ -21,6 +21,3 @@ impl TotalMine {
 
 #[derive(Resource, Default)]
 pub struct RemainingMine(pub i32);
-
-#[derive(Resource, Default)]
-pub struct Time(pub f32);
