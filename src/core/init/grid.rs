@@ -243,12 +243,13 @@ fn spawn_frame(
 }
 
 fn spawn_grid(
-    mines: &TotalMine,
+    mines: &mut TotalMine,
     commands: &mut Commands,
     grid: &mut Grid,
     q_windows: &mut Query<&mut Window, With<PrimaryWindow>>
 ) -> Entity {
-    grid.init(30, 16);
+    grid.init(10, 10);
+    mines.init(10);
     let window_size = grid.grid_window_size;
     q_windows.single_mut().resolution = WindowResolution::new(window_size.x + MARGIN_LEFT + MARGIN_RIGHT, window_size.y + MARGIN_UP + MARGIN_DOWN);
     grid.create_mine_positions(mines.0, None);
@@ -277,12 +278,12 @@ fn spawn_cells(
 
 pub fn init(
     mut commands: Commands,
-    mines: Res<TotalMine>,
+    mut mines: ResMut<TotalMine>,
     mut grid: ResMut<Grid>,
     mut q_windows: Query<&mut Window, With<PrimaryWindow>>,
     texture_atlas_resource: Res<asset::loader::TextureAtlasResource>,
 ) {
-    let frame_id = spawn_grid(&mines, &mut commands, &mut grid, &mut q_windows);
+    let frame_id = spawn_grid(&mut mines, &mut commands, &mut grid, &mut q_windows);
     spawn_cells(&mut commands, &mut grid, &texture_atlas_resource, frame_id);
     spawn_frame(&mut commands, &mut grid, &texture_atlas_resource, frame_id);
 }

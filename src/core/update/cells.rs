@@ -226,7 +226,17 @@ fn update_cells_query(
         let (entity, x, y) = querying_done_queue.pop().unwrap();
         update_querying_done_cell(x, y, entity, q_cells, grid);
     }
+}
 
+fn check_win(
+    q_cells: &Query<(Entity, &mut Cell)>,
+) -> bool {
+    for (_, cell) in q_cells.iter() {
+        if !(cell.state == CellState::Flagged || cell.state == CellState::Revealed) {
+            return false;
+        }
+    }
+    true
 }
 
 pub fn update(
@@ -238,6 +248,9 @@ pub fn update(
     let result = update_cells_open(&mut q_cells, &grid);
     if !result {
         next_state.set(GameState::Defeated);
+    }
+    if check_win(&q_cells) {
+        next_state.set(GameState::Win);
     }
 }
 
@@ -264,6 +277,12 @@ pub fn texture_for_playing(
 }
 
 pub fn texture_for_defeat(
+    mut q_cells: Query<(&Cell, &mut TextureAtlasSprite)>,
+) {
+    update_cells_texture(&mut q_cells);
+}
+
+pub fn texture_for_win(
     mut q_cells: Query<(&Cell, &mut TextureAtlasSprite)>,
 ) {
     update_cells_texture(&mut q_cells);

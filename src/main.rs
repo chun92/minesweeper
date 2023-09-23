@@ -72,7 +72,13 @@ fn main() {
         .add_systems(OnEnter(GameState::Defeated), (
             core::update::cells::bomb,
             core::update::cells::texture_for_defeat.after(core::update::cells::bomb),
-            core::update::time::stop
+            core::update::time::stop,
+            core::update::smiles::set_defeat,
+        ))
+        .add_systems(OnEnter(GameState::Win), (
+            core::update::cells::texture_for_win,
+            core::update::time::stop,
+            core::update::smiles::set_win,
         ))
         .run();
 }
