@@ -7,6 +7,11 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.11.2"
+js-sys = "0.3.64"
 rand = "0.8.5"
 strum = "0.25"
 strum_macros = "0.25"
+wasm-bindgen = "0.2.87"
+
+[target.wasm32-unknown-unknown]
+runner = "wasm-server-runner"

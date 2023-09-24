@@ -35,13 +35,11 @@ use bevy::prelude::*;
 use system::game_state::GameState;
 
 fn main() {
-    std::env::set_var("RUST_BACKTRACE", "1");
-
     App::new()
         .add_plugins(DefaultPlugins)
         .add_state::<GameState>()
         .init_resource::<asset::loader::TextureAtlasResource>()
-        .init_resource::<system::timer::Timer>()
+        .init_resource::<system::timer::platform::Timer>()
         .init_resource::<component::mine::TotalMine>()
         .init_resource::<component::mine::RemainingMine>()
         .init_resource::<component::grid::Grid>()
