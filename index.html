@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minesweeper WASM</title>
+</head>
+<body>
+    <script type="module">
+        import initSync from './out/minesweeper.js';
+
+        async function main() {
+            await initSync();
+        }
+        
+        window.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        }, false);
+        
+        main();
+    </script>
+</body>
+</html>
