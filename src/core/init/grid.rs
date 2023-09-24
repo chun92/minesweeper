@@ -248,9 +248,10 @@ fn spawn_grid(
     grid: &mut Grid,
     q_windows: &mut Query<&mut Window, With<PrimaryWindow>>
 ) -> Entity {
-    grid.init(10, 10);
-    mines.init(10);
+    grid.init(30, 16);
+    mines.init(99);
     let window_size = grid.grid_window_size;
+    q_windows.single_mut().title = "Minesweeper".to_string();
     q_windows.single_mut().resizable = false;
     q_windows.single_mut().resolution = WindowResolution::new(window_size.x + MARGIN_LEFT + MARGIN_RIGHT, window_size.y + MARGIN_UP + MARGIN_DOWN);
     grid.create_mine_positions(mines.0, None);
