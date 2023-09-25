@@ -25,6 +25,8 @@ pub enum TextureType {
     /* systems */
     Number,
     Smile,
+    /* icon */
+    Back,
 }
 
 impl TextureType {
@@ -49,10 +51,11 @@ impl TextureType {
             TextureType::Background => "background.png",
             TextureType::Number => "number.png",
             TextureType::Smile => "smile.png",
+            TextureType::Back => "back.png",
         }
     }
 
-    pub fn get_cell_size(&self) -> (f32, f32, u32, u32, f32, f32) {
+    pub fn get_texture_size(&self) -> (f32, f32, u32, u32, f32, f32) {
         match self {
             TextureType::Cells => (16.0, 16.0, 8, 2, 1.0, 1.0),
             TextureType::Smiles => (24.0, 24.0, 5, 1, 1.0, 0.0),
@@ -73,6 +76,7 @@ impl TextureType {
             TextureType::Background => (1.0, 1.0, 1, 1, 0.0, 0.0),
             TextureType::Number => (41.0, 25.0, 1, 1, 0.0, 0.0),
             TextureType::Smile => (26.0, 26.0, 1, 1, 0.0, 0.0),
+            TextureType::Back => (24.0, 24.0, 1, 1, 0.0, 0.0),
         }
     }
 }

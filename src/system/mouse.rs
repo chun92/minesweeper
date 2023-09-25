@@ -1,7 +1,6 @@
-//! Prints all mouse events to the console.
-
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
+use crate::component::back::BackComponent;
 use crate::component::cell::Cell;
 use crate::component::smile::SmileComponent;
 use crate::system::game_state::GameState;
@@ -25,6 +24,7 @@ pub fn mouse_events_system(
     q_windows: Query<&Window, With<PrimaryWindow>>,
     mut q_cells: Query<(&mut Cell, &Clickable)>,
     mut q_smiles: Query<(&mut SmileComponent, &Clickable)>,
+    q_backs: Query<(&Clickable, With<BackComponent>)>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
     if buttons.pressed(MouseButton::Left) {
@@ -46,6 +46,12 @@ pub fn mouse_events_system(
                     if !smile.is_pressed {
                         smile.pressed();
                     }
+                }
+            }
+            
+            for (clickable, _) in q_backs.iter() {
+                if clickable.is_inside(position) {
+                    next_state.set(GameState::Menu);
                 }
             }
         }

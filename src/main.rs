@@ -10,6 +10,7 @@ pub mod component {
     pub mod mine;
     pub mod grid;
     pub mod frame;
+    pub mod back;
 }
 
 pub mod system {
@@ -17,6 +18,7 @@ pub mod system {
     pub mod game_state;
     pub mod game_difficulty;
     pub mod mouse;
+    pub mod keyboard;
     pub mod timer;
 }
 
@@ -50,6 +52,7 @@ fn main() {
         .add_systems(OnEnter(GameState::Init), core::init::grid::init)
         .add_systems(Update, (
             system::mouse::mouse_events_system,
+            system::keyboard::keyboard_events_system,
             core::update::smiles::update,
             core::update::time::update,
         ))

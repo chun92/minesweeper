@@ -46,8 +46,8 @@ impl Grid {
         self.width = width;
         self.height = height;
         
-        let cell_width = TextureType::Cells.get_cell_size().0;
-        let cell_height = TextureType::Cells.get_cell_size().1;
+        let cell_width = TextureType::Cells.get_texture_size().0;
+        let cell_height = TextureType::Cells.get_texture_size().1;
     
         let grid_width = cell_width * self.width as f32;
         let grid_height = cell_height * self.height as f32;

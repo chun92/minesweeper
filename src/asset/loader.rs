@@ -70,12 +70,12 @@ fn load_texture_with_type(
     texture_atlas_resource: &mut TextureAtlasResource,
     texture_type: TextureType
 ) {
-    let width = texture_type.get_cell_size().0;
-    let height = texture_type.get_cell_size().1;
-    let columns = texture_type.get_cell_size().2;
-    let rows = texture_type.get_cell_size().3;
-    let horizontal_space = texture_type.get_cell_size().4;
-    let vertical_gap = texture_type.get_cell_size().5;
+    let width = texture_type.get_texture_size().0;
+    let height = texture_type.get_texture_size().1;
+    let columns = texture_type.get_texture_size().2;
+    let rows = texture_type.get_texture_size().3;
+    let horizontal_space = texture_type.get_texture_size().4;
+    let vertical_gap = texture_type.get_texture_size().5;
     load_texture(texture_type, 
         AtlasOptions { width, height, columns, rows, horizontal_space, vertical_gap}, 
         &asset_server, 

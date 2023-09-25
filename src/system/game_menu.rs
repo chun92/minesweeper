@@ -32,7 +32,10 @@ pub mod menu {
                 // entering the `GameState::Menu` state.
                 // Current screen in the menu is handled by an independent state from `GameState`
                 .add_state::<MenuState>()
-                .add_systems(OnEnter(GameState::Menu), menu_setup)
+                .add_systems(OnEnter(GameState::Menu), (
+                    menu_setup,
+                    crate::core::init::grid::clear
+                ))
                 // Systems to handle the main menu screen
                 .add_systems(OnEnter(MenuState::Main), main_menu_setup)
                 .add_systems(OnExit(MenuState::Main), despawn_screen::<OnMainMenuScreen>)

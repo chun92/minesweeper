@@ -63,8 +63,8 @@ impl Cell {
         assert!(self.x > 0);
         assert!(self.y > 0);
 
-        let width_pixel = TextureType::Cells.get_cell_size().0;
-        let height_pixel = TextureType::Cells.get_cell_size().1;
+        let width_pixel = TextureType::Cells.get_texture_size().0;
+        let height_pixel = TextureType::Cells.get_texture_size().1;
         let x_offset = grid.width as f32 * width_pixel / 2.0;
         let y_offset = grid.height as f32 * height_pixel / 2.0;
         let x = (self.x - 1) as f32 * width_pixel + width_pixel / 2.0 - x_offset + MARGIN_X;
