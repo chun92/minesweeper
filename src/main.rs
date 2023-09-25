@@ -13,7 +13,9 @@ pub mod component {
 }
 
 pub mod system {
+    pub mod game_menu;
     pub mod game_state;
+    pub mod game_difficulty;
     pub mod mouse;
     pub mod timer;
 }
@@ -45,7 +47,7 @@ fn main() {
         .init_resource::<component::grid::Grid>()
         .add_systems(Startup, asset::loader::setup)
         .add_systems(PostStartup, core::init::camera::init)
-        .add_systems(PostStartup, core::init::grid::init)
+        .add_systems(OnEnter(GameState::Init), core::init::grid::init)
         .add_systems(Update, (
             system::mouse::mouse_events_system,
             core::update::smiles::update,
@@ -78,5 +80,8 @@ fn main() {
             core::update::time::stop,
             core::update::smiles::set_win,
         ))
+        .insert_resource(system::game_difficulty::Difficulty::Hard)
+        .insert_resource(system::game_menu::Volume(7))
+        .add_plugins(system::game_menu::menu::MenuPlugin)
         .run();
 }

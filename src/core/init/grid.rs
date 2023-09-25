@@ -7,6 +7,8 @@ use crate::component::smile::{SmileComponent, SmileSprite};
 use crate::component::number::{NumberSprite, NumberType, NumberTypeComponent, NumberIndex, NumberIndexComponent};
 use crate::component::mine::TotalMine;
 use crate::component::frame::Frame;
+use crate::system::game_difficulty::Difficulty;
+use crate::system::game_state::GameState;
 use crate::system::mouse;
 use crate::asset::{self, texture_type::TextureType};
 
@@ -242,14 +244,24 @@ fn spawn_frame(
     spawn(position);
 }
 
+fn get_difficulty(difficulty: &Difficulty) -> (u32, u32, u32) {
+    match difficulty {
+        Difficulty::Easy => (9, 9, 10),
+        Difficulty::Normal => (16, 16, 40),
+        Difficulty::Hard => (30, 16, 99),
+    }
+}
+
 fn spawn_grid(
     mines: &mut TotalMine,
+    difficulty: &Difficulty,
     commands: &mut Commands,
     grid: &mut Grid,
     q_windows: &mut Query<&mut Window, With<PrimaryWindow>>
 ) -> Entity {
-    grid.init(30, 16);
-    mines.init(99);
+    let (width, height, num_mines) = get_difficulty(difficulty);
+    grid.init(width, height);
+    mines.init(num_mines);
     let window_size = grid.grid_window_size;
     q_windows.single_mut().title = "Minesweeper".to_string();
     q_windows.single_mut().resizable = false;
@@ -283,9 +295,12 @@ pub fn init(
     mut mines: ResMut<TotalMine>,
     mut grid: ResMut<Grid>,
     mut q_windows: Query<&mut Window, With<PrimaryWindow>>,
+    difficulty : Res<Difficulty>,
     texture_atlas_resource: Res<asset::loader::TextureAtlasResource>,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
-    let frame_id = spawn_grid(&mut mines, &mut commands, &mut grid, &mut q_windows);
+    let frame_id = spawn_grid(&mut mines, &difficulty, &mut commands, &mut grid, &mut q_windows);
     spawn_cells(&mut commands, &mut grid, &texture_atlas_resource, frame_id);
     spawn_frame(&mut commands, &mut grid, &texture_atlas_resource, frame_id);
+    next_state.set(GameState::Ready);
 }
