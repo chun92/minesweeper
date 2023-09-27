@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 use bevy::window::{PrimaryWindow, WindowResolution};
 
-use crate::component::back::BackComponent;
 use crate::component::grid::{Grid, MARGIN_UP, MARGIN_DOWN, MARGIN_LEFT, MARGIN_RIGHT, MARGIN_X, MARGIN_Y};
 use crate::component::cell::Cell;
 use crate::component::smile::{SmileComponent, SmileSprite};
 use crate::component::number::{NumberSprite, NumberType, NumberTypeComponent, NumberIndex, NumberIndexComponent};
 use crate::component::mine::TotalMine;
 use crate::component::frame::Frame;
+use crate::system::egui::TOP_BAR_HEIGHT;
 use crate::system::game_difficulty::Difficulty;
 use crate::system::game_state::GameState;
 use crate::system::mouse;
@@ -72,7 +72,7 @@ fn spawn_frame(
                 texture_atlas: texture_atlas_handle.clone(),
                 sprite: TextureAtlasSprite::new(0),
                 transform: Transform {
-                    translation: Vec3::new(position.x + MARGIN_X, position.y + 1.0 + MARGIN_Y, position.z),
+                    translation: Vec3::new(position.x + MARGIN_X, position.y + 1.0 + MARGIN_Y - TOP_BAR_HEIGHT / 2.0, position.z),
                     scale: scale,
                     ..default()
                 },
@@ -152,7 +152,7 @@ fn spawn_frame(
                 texture_atlas: texture_atlas_handle.clone(),
                 sprite: TextureAtlasSprite::new(0),
                 transform: Transform {
-                    translation: Vec3::new(position.x + MARGIN_X, position.y + MARGIN_Y, position.z),
+                    translation: Vec3::new(position.x + MARGIN_X, position.y + MARGIN_Y - TOP_BAR_HEIGHT / 2.0, position.z),
                     ..default()
                 },
                 ..default()
@@ -208,7 +208,7 @@ fn spawn_frame(
     spawn(position, NumberType::Time);
     
     let mut spawn = |position: Vec3| {
-        let position = Vec3::new(position.x + MARGIN_X, position.y + MARGIN_Y, position.z);
+        let position = Vec3::new(position.x + MARGIN_X, position.y + MARGIN_Y - TOP_BAR_HEIGHT / 2.0, position.z);
         let texture_atlas_handle = texture_atlas_resource.handles.get(&TextureType::Smile).unwrap();
         commands.spawn((
             SpriteSheetBundle {
@@ -243,43 +243,6 @@ fn spawn_frame(
     
     let position = Vec3::new(0.0, top_position + TextureType::Smile.get_texture_size().1 / 2.0 + 3.0, EPSILON);
     spawn(position);
-
-    let mut spawn = |position: Vec3| {
-        let position = Vec3::new(position.x + MARGIN_X, position.y + MARGIN_Y, position.z);
-        let texture_atlas_handle = texture_atlas_resource.handles.get(&TextureType::Back).unwrap();
-        commands.spawn((
-            SpriteSheetBundle {
-                texture_atlas: texture_atlas_handle.clone(),
-                sprite: TextureAtlasSprite::new(0),
-                transform: Transform {
-                    translation: position,
-                    ..default()
-                },
-                ..default()
-            },
-        )).with_children(|commands| {
-            let texture_atlas_handle = texture_atlas_resource.handles.get(&TextureType::Back).unwrap();
-            commands.spawn((
-                BackComponent,
-                SpriteSheetBundle {
-                    texture_atlas: texture_atlas_handle.clone(),
-                    sprite: TextureAtlasSprite::new(0),
-                    transform: Transform {
-                        translation: Vec3::new(0.0, 0.0, position.z * 2.0),
-                        ..default()
-                    },
-                    ..default()
-                },
-                mouse::Clickable(
-                    Vec3::new(position.x + grid.window_position.x, -position.y + grid.window_position.y, 0.0), 
-                        TextureType::Back.get_texture_size().0, 
-                        TextureType::Back.get_texture_size().1),
-            ));
-        }).set_parent(frame_id);
-    };
-    
-    let position = Vec3::new(30.0, top_position + TextureType::Back.get_texture_size().1 / 2.0 + 3.0, EPSILON);
-    spawn(position);
 }
 
 fn get_difficulty(difficulty: &Difficulty) -> (u32, u32, u32) {
@@ -303,7 +266,7 @@ fn spawn_grid(
     let window_size = grid.grid_window_size;
     q_windows.single_mut().title = "Minesweeper".to_string();
     q_windows.single_mut().resizable = false;
-    q_windows.single_mut().resolution = WindowResolution::new(window_size.x + MARGIN_LEFT + MARGIN_RIGHT, window_size.y + MARGIN_UP + MARGIN_DOWN);
+    q_windows.single_mut().resolution = WindowResolution::new(window_size.x + MARGIN_LEFT + MARGIN_RIGHT, window_size.y + MARGIN_UP + MARGIN_DOWN + TOP_BAR_HEIGHT);
     grid.create_mine_positions(mines.0, None);
     
     commands.spawn((

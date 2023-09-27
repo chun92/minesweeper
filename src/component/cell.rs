@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use crate::component::grid::{Grid, MARGIN_X, MARGIN_Y};
 use crate::asset::texture_type::TextureType;
+use crate::system::egui::TOP_BAR_HEIGHT;
 
 #[derive(PartialEq, Eq)]
 pub enum CellState {
@@ -68,7 +69,7 @@ impl Cell {
         let x_offset = grid.width as f32 * width_pixel / 2.0;
         let y_offset = grid.height as f32 * height_pixel / 2.0;
         let x = (self.x - 1) as f32 * width_pixel + width_pixel / 2.0 - x_offset + MARGIN_X;
-        let y = (self.y - 1) as f32 * height_pixel + height_pixel / 2.0 - y_offset + MARGIN_Y;
+        let y = (self.y - 1) as f32 * height_pixel + height_pixel / 2.0 - y_offset + MARGIN_Y - TOP_BAR_HEIGHT / 2.0;
         Vec3::new(x, y, 0.0)
     }
 
