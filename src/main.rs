@@ -10,7 +10,6 @@ pub mod component {
     pub mod mine;
     pub mod grid;
     pub mod frame;
-    pub mod back;
 }
 
 pub mod system {

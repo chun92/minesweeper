@@ -25,8 +25,6 @@ pub enum TextureType {
     /* systems */
     Number,
     Smile,
-    /* icon */
-    Back,
 }
 
 impl TextureType {
@@ -51,7 +49,6 @@ impl TextureType {
             TextureType::Background => "background.png",
             TextureType::Number => "number.png",
             TextureType::Smile => "smile.png",
-            TextureType::Back => "back.png",
         }
     }
 
@@ -76,7 +73,6 @@ impl TextureType {
             TextureType::Background => (1.0, 1.0, 1, 1, 0.0, 0.0),
             TextureType::Number => (41.0, 25.0, 1, 1, 0.0, 0.0),
             TextureType::Smile => (26.0, 26.0, 1, 1, 0.0, 0.0),
-            TextureType::Back => (24.0, 24.0, 1, 1, 0.0, 0.0),
         }
     }
 }
