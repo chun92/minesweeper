@@ -52,7 +52,7 @@ fn main() {
             core::init::grid::init.after(core::init::grid::clear),
         ))
         .add_systems(Update, (
-            system::mouse::mouse_events_system,
+            system::mouse::mouse_events_system.after(system::egui::ui_system),
             core::update::smiles::update,
             core::update::time::update,
         ))

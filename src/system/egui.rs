@@ -15,7 +15,7 @@ impl Plugin for EguiMenuPlugin {
             // .insert_resource(Msaa::Sample4)
             .add_plugins(EguiPlugin)
             .add_systems(Startup, configure_visuals_system)
-            .add_systems(Update, ui_example_system);
+            .add_systems(Update, ui_system);
     }
 }
 
@@ -27,7 +27,7 @@ fn configure_visuals_system(mut contexts: EguiContexts) {
 }
 
 
-fn ui_example_system(
+pub fn ui_system(
     mut contexts: EguiContexts,
     mut app_exit_events: ResMut<Events<AppExit>>,
     mut game_state: ResMut<NextState<GameState>>,
