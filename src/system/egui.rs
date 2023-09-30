@@ -17,7 +17,7 @@ impl Plugin for EguiMenuPlugin {
             .add_state::<MenuInfoState>()
             .add_plugins(EguiPlugin)
             .add_systems(Startup, configure_visuals_system)
-            .add_systems(Update, ui_system)
+            .add_systems(Update, ui_system);
     }
 }
 
