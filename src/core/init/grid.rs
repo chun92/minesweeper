@@ -41,7 +41,7 @@ fn spawn_cell(
             ..default()
         },
         mouse::Clickable(
-            Vec3::new(position.x + grid.window_position.x, -position.y + grid.window_position.y, 0.0), 
+            Vec3::new(position.x + grid.window_position.x, -position.y + grid.window_position.y + TOP_BAR_HEIGHT / 2.0, 0.0), 
             width, 
             height),
     )).set_parent(frame_id).id();
@@ -234,7 +234,7 @@ fn spawn_frame(
                     ..default()
                 },
                 mouse::Clickable(
-                    Vec3::new(position.x + grid.window_position.x, -position.y + grid.window_position.y, 0.0), 
+                    Vec3::new(position.x + grid.window_position.x, -position.y + grid.window_position.y + TOP_BAR_HEIGHT / 2.0, 0.0), 
                         TextureType::Smiles.get_texture_size().0, 
                         TextureType::Smiles.get_texture_size().1),
             ));
