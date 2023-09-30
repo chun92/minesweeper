@@ -18,10 +18,6 @@ impl Plugin for EguiMenuPlugin {
             .add_plugins(EguiPlugin)
             .add_systems(Startup, configure_visuals_system)
             .add_systems(Update, ui_system)
-            .add_systems(OnEnter(MenuGameState::Opened), on_game_menu_opened)
-            .add_systems(OnEnter(MenuGameState::Closed), on_game_menu_closed)
-            .add_systems(OnEnter(MenuInfoState::Opened), on_info_menu_opened)
-            .add_systems(OnEnter(MenuInfoState::Closed), on_info_menu_closed);
     }
 }
 
@@ -132,32 +128,4 @@ pub fn ui_system(
             });
         });
     });
-}
-
-fn on_game_menu_opened(
-    mut next_menu_state: ResMut<NextState<MenuGameState>>,
-    mut game_state: ResMut<NextState<GameState>>,
-) {
-    info!("Game menu opened");
-}
-
-fn on_game_menu_closed(
-    mut next_menu_state: ResMut<NextState<MenuGameState>>,
-    mut game_state: ResMut<NextState<GameState>>,
-) {
-    info!("Game menu closed");
-}
-
-fn on_info_menu_opened(
-    mut next_menu_state: ResMut<NextState<MenuInfoState>>,
-    mut game_state: ResMut<NextState<GameState>>,
-) {
-    info!("Info menu opened");
-}
-
-fn on_info_menu_closed(
-    mut next_menu_state: ResMut<NextState<MenuInfoState>>,
-    mut game_state: ResMut<NextState<GameState>>,
-) {
-    info!("Info menu closed");
 }
