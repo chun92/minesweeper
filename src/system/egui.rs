@@ -46,15 +46,38 @@ pub fn ui_system(
         next_info_menu_state.set(MenuInfoState::Opened);
     }
 
-    egui::Window::new("About")
-        .vscroll(true)
-        .open(&mut is_about_open)
-        .show(ctx, |ui| {
-            ui.label("Windows can be moved by dragging them.");
-            ui.label("They are automatically sized based on contents.");
-            ui.label("You can turn on resizing and scrolling if you like.");
-            ui.label("You would normally chose either panels OR windows.");
+    egui::Window::new("About Minesweeper")
+    .vscroll(true)
+    .open(&mut is_about_open)
+    .show(ctx, |ui| {
+        ui.label("Minesweeper: Clone of a MS Minesweeper");
+        ui.group(|ui| {
+            ui.horizontal(|ui| {
+                ui.label("Version:");
+                ui.monospace("1.0.0");
+            });
+            ui.horizontal(|ui| {
+                ui.label("Developer:");
+                ui.monospace("chun92");
+            });
+            ui.horizontal(|ui| {
+                ui.label("License:");
+                ui.monospace("MIT License");
+            });
+            ui.horizontal(|ui| {
+                ui.label("Source Code:");
+                if ui.hyperlink("https://github.com/chun92/minesweeper").clicked() {
+                }
+            });
+            ui.horizontal(|ui| {
+                ui.label("Game Engine:");
+                ui.monospace("Bevy 0.11.2 with Rust");
+            });
         });
+        ui.group(|ui| {
+            ui.label("Thank you for playing!");
+        });
+    });
 
     egui::TopBottomPanel::top("top_panel")
         .exact_height(TOP_BAR_HEIGHT)
