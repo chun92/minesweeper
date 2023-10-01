@@ -74,7 +74,7 @@ pub fn ui_system(
         ui.group(|ui| {
             ui.horizontal(|ui| {
                 ui.label("Version:");
-                ui.monospace("1.0.0");
+                ui.monospace("0.1.0");
             });
             ui.horizontal(|ui| {
                 ui.label("Developer:");
