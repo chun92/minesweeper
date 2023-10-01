@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use crate::component::cell::Cell;
 use crate::component::smile::SmileComponent;
-use crate::system::game_state::GameState;
+use crate::system::state::GameState;
 
 #[derive(Component)]
 pub struct Clickable(pub Vec3, pub f32, pub f32);

@@ -14,8 +14,8 @@ pub mod component {
 
 pub mod system {
     pub mod game;
-    pub mod game_state;
-    pub mod game_difficulty;
+    pub mod state;
+    pub mod difficulty;
     pub mod mouse;
     pub mod timer;
     pub mod egui;

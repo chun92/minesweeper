@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use bevy::app::AppExit;
 use bevy_egui::{egui::{self, PointerButton}, EguiContexts, EguiPlugin};
 
-use crate::system::game_difficulty::Difficulty;
-use crate::system::game_state::{GameState, MenuGameState, MenuInfoState, AboutWindowState};
+use crate::system::difficulty::Difficulty;
+use crate::system::state::{GameState, MenuGameState, MenuInfoState, AboutWindowState};
 use crate::system::window::{init_window, init_window_with_ui};
 
 pub struct EguiMenuPlugin;

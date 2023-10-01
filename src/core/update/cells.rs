@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use crate::component::grid::Grid;
 use crate::component::cell::{Cell, CellState, QueryState};
 use crate::component::mine::TotalMine;
-use crate::system::game_state::GameState;
+use crate::system::state::GameState;
 
 pub fn reset(
     mut q_cells: Query<&mut Cell>,

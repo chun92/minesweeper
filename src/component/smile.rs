@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::system::game_state::GameState;
+use crate::system::state::GameState;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum SmileSprite {

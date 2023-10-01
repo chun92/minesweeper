@@ -7,8 +7,8 @@ use crate::component::number::{NumberSprite, NumberType, NumberTypeComponent, Nu
 use crate::component::mine::TotalMine;
 use crate::component::frame::Frame;
 use crate::system::egui::TOP_BAR_HEIGHT;
-use crate::system::game_difficulty::Difficulty;
-use crate::system::game_state::GameState;
+use crate::system::difficulty::Difficulty;
+use crate::system::state::GameState;
 use crate::system::mouse;
 use crate::asset::{self, texture_type::TextureType};
 
