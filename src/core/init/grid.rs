@@ -266,7 +266,10 @@ fn spawn_grid(
     let window_size = grid.grid_window_size;
     q_windows.single_mut().title = "Minesweeper".to_string();
     q_windows.single_mut().resizable = false;
-    q_windows.single_mut().resolution = WindowResolution::new(window_size.x + MARGIN_LEFT + MARGIN_RIGHT, window_size.y + MARGIN_UP + MARGIN_DOWN + TOP_BAR_HEIGHT);
+    let base_scale_factor = q_windows.single_mut().resolution.base_scale_factor();
+    let mut resolution = WindowResolution::new(window_size.x + MARGIN_LEFT + MARGIN_RIGHT, window_size.y + MARGIN_UP + MARGIN_DOWN + TOP_BAR_HEIGHT);
+    resolution.set_scale_factor(base_scale_factor);
+    q_windows.single_mut().resolution = resolution;
     grid.create_mine_positions(mines.0, None);
     
     commands.spawn((
