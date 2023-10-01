@@ -1,7 +1,6 @@
 use bevy::prelude::*;
-use bevy::window::{PrimaryWindow, WindowResolution};
 
-use crate::component::grid::{Grid, MARGIN_UP, MARGIN_DOWN, MARGIN_LEFT, MARGIN_RIGHT, MARGIN_X, MARGIN_Y};
+use crate::component::grid::{Grid, MARGIN_X, MARGIN_Y};
 use crate::component::cell::Cell;
 use crate::component::smile::{SmileComponent, SmileSprite};
 use crate::component::number::{NumberSprite, NumberType, NumberTypeComponent, NumberIndex, NumberIndexComponent};
@@ -258,18 +257,10 @@ fn spawn_grid(
     difficulty: &Difficulty,
     commands: &mut Commands,
     grid: &mut Grid,
-    q_windows: &mut Query<&mut Window, With<PrimaryWindow>>
 ) -> Entity {
     let (width, height, num_mines) = get_difficulty(difficulty);
     grid.init(width, height);
     mines.init(num_mines);
-    let window_size = grid.grid_window_size;
-    q_windows.single_mut().title = "Minesweeper".to_string();
-    q_windows.single_mut().resizable = false;
-    let base_scale_factor = q_windows.single_mut().resolution.base_scale_factor();
-    let mut resolution = WindowResolution::new(window_size.x + MARGIN_LEFT + MARGIN_RIGHT, window_size.y + MARGIN_UP + MARGIN_DOWN + TOP_BAR_HEIGHT);
-    resolution.set_scale_factor(base_scale_factor);
-    q_windows.single_mut().resolution = resolution;
     grid.create_mine_positions(mines.0, None);
     
     commands.spawn((
@@ -298,12 +289,11 @@ pub fn init(
     mut commands: Commands,
     mut mines: ResMut<TotalMine>,
     mut grid: ResMut<Grid>,
-    mut q_windows: Query<&mut Window, With<PrimaryWindow>>,
     difficulty : Res<Difficulty>,
     texture_atlas_resource: Res<asset::loader::TextureAtlasResource>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    let frame_id = spawn_grid(&mut mines, &difficulty, &mut commands, &mut grid, &mut q_windows);
+    let frame_id = spawn_grid(&mut mines, &difficulty, &mut commands, &mut grid);
     spawn_cells(&mut commands, &mut grid, &texture_atlas_resource, frame_id);
     spawn_frame(&mut commands, &mut grid, &texture_atlas_resource, frame_id);
     next_state.set(GameState::Ready);
