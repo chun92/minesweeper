@@ -14,6 +14,7 @@ impl Plugin for GamePlugin {
             .add_state::<system::state::GameState>()
             .init_resource::<asset::loader::TextureAtlasResource>()
             .init_resource::<system::timer::platform::Timer>()
+            .init_resource::<system::uuid::UuidResource>()
             .init_resource::<component::mine::TotalMine>()
             .init_resource::<component::mine::RemainingMine>()
             .init_resource::<component::grid::Grid>()
