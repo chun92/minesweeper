@@ -20,6 +20,12 @@ pub mod system {
     pub mod timer;
     pub mod egui;
     pub mod window;
+    pub mod uuid;
+    pub mod auth;
+}
+
+pub mod utils {
+    pub mod yaml;
 }
 
 pub mod core {
@@ -42,5 +48,6 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(system::game::GamePlugin)
         .add_plugins(system::egui::EguiMenuPlugin)
+        .add_plugins(system::auth::AuthPlugin)
         .run();
 }
