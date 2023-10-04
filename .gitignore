@@ -17,3 +17,9 @@ Cargo.lock
 .firebaserc
 firebase.json
 ui-debug.log
+
+# config files
+assets/yaml/*.yaml
+
+# key
+key/*

@@ -22,6 +22,7 @@ pub mod system {
     pub mod window;
     pub mod uuid;
     pub mod auth;
+    pub mod firestore;
 }
 
 pub mod utils {
@@ -42,12 +43,12 @@ pub mod core {
 }
 
 use bevy::prelude::*;
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(system::game::GamePlugin)
         .add_plugins(system::egui::EguiMenuPlugin)
         .add_plugins(system::auth::AuthPlugin)
+        .add_plugins(system::firestore::FirestorePlugin)
         .run();
 }

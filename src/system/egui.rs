@@ -5,6 +5,9 @@ use bevy_egui::{egui::{self, PointerButton}, EguiContexts, EguiPlugin};
 use crate::system::difficulty::Difficulty;
 use crate::system::state::{GameState, MenuGameState, MenuInfoState, AboutWindowState};
 use crate::system::window::{init_window, init_window_with_ui};
+use crate::system::auth::{Config, initiate_google_login};
+use crate::system::uuid::UuidResource;
+use crate::system::firestore::LoginDone;
 
 pub struct EguiMenuPlugin;
 
@@ -52,6 +55,9 @@ pub fn ui_system(
     mut difficulty: ResMut<Difficulty>,
     mut is_about_open: Local<bool>,
     mut ui_size: ResMut<UiSize>,
+    config: Res<Config>,
+    uuid: Res<UuidResource>,
+    login_done: Res<LoginDone>,
 ) {
     let ctx = contexts.ctx_mut();
 
@@ -86,8 +92,7 @@ pub fn ui_system(
             });
             ui.horizontal(|ui| {
                 ui.label("Source Code:");
-                if ui.hyperlink("https://github.com/chun92/minesweeper").clicked() {
-                }
+                ui.hyperlink("https://github.com/chun92/minesweeper");
             });
             ui.horizontal(|ui| {
                 ui.label("Game Engine:");
@@ -113,7 +118,28 @@ pub fn ui_system(
         .show(ctx, |ui| {
         egui::menu::bar(ui, |ui| {
             ui.set_height(TOP_BAR_HEIGHT);
-            let menu_game = egui::menu::menu_button(ui, "Game", |ui| {                
+            let menu_game = egui::menu::menu_button(ui, "Game", |ui| {
+                let is_login_done = *login_done.done.lock().unwrap();
+
+                if is_login_done {
+                    let id = login_done.id.lock().unwrap();
+                    if let Some(id) = id.as_ref() {
+                        ui.label(format!("{}", id));
+                    } else {
+                        ui.label("Login: Error");
+                    }
+                } else {
+                    if ui.button("Login").clicked() {
+                        let config = &config;
+                        let uuid = uuid.uuid.to_string();                    
+                        initiate_google_login(config, uuid.as_str());
+                        ui.close_menu();
+                        next_game_menu_state.set(MenuGameState::Closed);
+                    }
+                }
+
+                ui.separator();
+
                 if ui.selectable_label(*difficulty == Difficulty::Easy, "Easy").clicked() {
                     *difficulty = Difficulty::Easy;
                     game_state.set(GameState::Init);
