@@ -4,6 +4,7 @@ const {Timestamp} = require("firebase-admin/firestore");
 const axios = require("axios");
 const fs = require("fs");
 const yaml = require("js-yaml");
+const {schedule} = require("firebase-functions/v1/pubsub");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -45,12 +46,26 @@ exports.oauth = onRequest(async (request, response) => {
 
     const email = userInfoResponse.data.email;
     const docRef = admin.firestore().collection("login").doc(state);
-    await docRef.set({user_id: email});
+    await docRef.set({
+      user_id: email,
+      created_at: Timestamp.now(),
+    });
     response.send("Successfully fetched user information");
   } catch (error) {
     console.error("Error fetching user information:", error);
     response.status(500).send("Failed to fetch user information");
   }
+});
+
+exports.deleteOldItems = schedule("every 60 minutes").onRun(async (context) => {
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+  const oldItemsQuery = admin.firestore()
+      .collection("login")
+      .where("created_at", "<", oneHourAgo);
+  const snapshot = await oldItemsQuery.get();
+  const deletions = snapshot.docs.map((doc) => doc.ref.delete());
+  return Promise.all(deletions);
 });
 
 exports.uploadRanking = onRequest(async (req, res) => {
