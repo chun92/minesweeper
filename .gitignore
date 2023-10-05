@@ -24,3 +24,6 @@ assets/yaml/*.yaml
 
 # key
 key/*
+
+# temp files
+*.tmp
