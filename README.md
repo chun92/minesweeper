@@ -24,3 +24,9 @@ firebase login
 firebase init functions
 firebase deploy --only functions
 ```
+
+## Config files
+```
+/assets/yaml/config.yaml.example => /assets/yaml/config.yaml
+/functions/config.yaml.example => /functions/config.yaml
+```
