@@ -7,3 +7,13 @@ pub enum Difficulty {
     #[default]
     Hard,
 }
+
+impl Difficulty {
+    pub fn to_string(&self) -> String {
+        match self {
+            Self::Easy => "Easy".to_string(),
+            Self::Normal => "Normal".to_string(),
+            Self::Hard => "Hard".to_string(),
+        }
+    }
+}

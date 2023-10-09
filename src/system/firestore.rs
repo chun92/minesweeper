@@ -4,8 +4,11 @@ use std::sync::{Arc, Mutex};
 use bevy_tokio_tasks::TokioTasksRuntime;
 use bevy_tokio_tasks::TaskContext;
 use serde::{Deserialize, Serialize};
+use chrono::Utc;
 
 use crate::system::uuid::UuidResource;
+
+use super::difficulty;
 
 pub const PROJECT_ID: &str = "minesweeper-86284";
 const TARGET_ID_BY_DOC_IDS: FirestoreListenerTarget = FirestoreListenerTarget::new(17_u32);
@@ -17,7 +20,8 @@ impl Plugin for FirestorePlugin {
             .add_plugins(bevy_tokio_tasks::TokioTasksPlugin::default())
             .init_resource::<LoginDone>()
             .init_resource::<FirestoreResource>()
-            .add_systems(Startup, init_firestore);
+            .add_systems(Startup, init_firestore)
+            .add_systems(OnEnter(crate::system::state::GameState::Win), add_ranking);
     }
 }
 
@@ -143,4 +147,52 @@ pub async fn listen_login(db: Arc<Mutex<Option<FirestoreDb>>>, uuid: &str, ctx: 
     info!("listen done");
     
     Ok(())
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct RankingStructure {
+    pub id: String,
+    pub time: f32,
+    pub difficulty: String,
+    pub created_at: firestore::FirestoreTimestamp,
+}
+
+pub fn add_ranking(
+    runtime: ResMut<TokioTasksRuntime>,
+    firestore: Res<FirestoreResource>,
+    login_done: Res<LoginDone>,
+    difficulty: Res<difficulty::Difficulty>,
+    timer: Res<crate::system::timer::platform::Timer>,
+) {
+    let db = firestore.db.clone();
+    let id = login_done.id.clone();
+    let login_done = login_done.done.clone();
+    let time = timer.get_milli_sec() as f32 / 1000.0;
+    let difficulty = difficulty.clone();
+    
+    if login_done.lock().unwrap().clone() {
+        runtime.spawn_background_task(move |_ctx| async move {        
+            let firestore_db = {
+                let locked_db = db.lock().unwrap();
+                locked_db.as_ref().ok_or_else(|| Box::<dyn std::error::Error>::from("FirestoreDb is None")).expect("Firestore Db Initialize Exception").clone()
+            };
+
+            let ranking_structure = RankingStructure {
+                id: id.lock().unwrap().clone().unwrap(),
+                time: time,
+                difficulty: difficulty.to_string(),
+                created_at: firestore::FirestoreTimestamp(Utc::now()),
+            };
+
+            let _object_returned: RankingStructure = firestore_db.fluent()
+                .insert()
+                .into("ranking")
+                .generate_document_id()
+                .object(&ranking_structure)
+                .execute()
+                .await.expect("Insert failed");
+        });
+    } else {
+        todo!();
+    }
 }
