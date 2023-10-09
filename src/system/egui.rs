@@ -3,7 +3,7 @@ use bevy::app::AppExit;
 use bevy_egui::{egui::{self, PointerButton}, EguiContexts, EguiPlugin};
 
 use crate::system::difficulty::Difficulty;
-use crate::system::state::{GameState, MenuGameState, MenuInfoState, AboutWindowState};
+use crate::system::state::{GameState, MenuGameState, MenuInfoState, WindowState, RankingWindowState};
 use crate::system::window::{init_window, init_window_with_ui};
 use crate::system::auth::{Config, initiate_google_login};
 use crate::system::uuid::UuidResource;
@@ -25,12 +25,15 @@ impl Plugin for EguiMenuPlugin {
             .init_resource::<UiSize>()
             .add_state::<MenuGameState>()
             .add_state::<MenuInfoState>()
-            .add_state::<AboutWindowState>()
+            .add_state::<WindowState>()
+            .add_state::<RankingWindowState>()
             .add_plugins(EguiPlugin)
             .add_systems(Startup, configure_visuals_system)
             .add_systems(Update, ui_system)
-            .add_systems(OnEnter(AboutWindowState::Opened), init_window_with_ui)
-            .add_systems(OnEnter(AboutWindowState::Closed), init_window);
+            .add_systems(OnEnter(WindowState::Opened), init_window_with_ui)
+            .add_systems(OnEnter(WindowState::Closed), init_window)
+            .add_systems(OnEnter(RankingWindowState::Opened), init_window_with_ui)
+            .add_systems(OnEnter(RankingWindowState::Closed), init_window);
     }
 }
 
@@ -41,6 +44,19 @@ fn configure_visuals_system(mut contexts: EguiContexts) {
     });
 }
 
+pub struct UiLocal {
+    pub is_about_open: bool,
+    pub is_ranking_open: bool,
+}
+
+impl Default for UiLocal {
+    fn default() -> Self {
+        Self {
+            is_about_open: false,
+            is_ranking_open: false,
+        }
+    }
+}
 
 pub fn ui_system(
     mut contexts: EguiContexts,
@@ -50,10 +66,11 @@ pub fn ui_system(
     mut next_game_menu_state: ResMut<NextState<MenuGameState>>,
     current_info_menu_state: Res<State<MenuInfoState>>,
     mut next_info_menu_state: ResMut<NextState<MenuInfoState>>,
-    current_about_window_state: Res<State<AboutWindowState>>,
-    mut next_about_window_state: ResMut<NextState<AboutWindowState>>,
+    current_window_state: Res<State<WindowState>>,
+    mut next_window_state: ResMut<NextState<WindowState>>,
     mut difficulty: ResMut<Difficulty>,
-    mut is_about_open: Local<bool>,
+    mut ui_local_values: Local<UiLocal>,
+    mut ranking_difficulty: Local<Difficulty>,
     mut ui_size: ResMut<UiSize>,
     config: Res<Config>,
     uuid: Res<UuidResource>,
@@ -61,20 +78,20 @@ pub fn ui_system(
 ) {
     let ctx = contexts.ctx_mut();
 
-    if *is_about_open {
+    if ui_local_values.is_about_open {
         next_info_menu_state.set(MenuInfoState::Opened);
-        if *current_about_window_state == AboutWindowState::Closed {
-            next_about_window_state.set(AboutWindowState::Opened);
+        if *current_window_state == WindowState::Closed {
+            next_window_state.set(WindowState::Opened);
         }
     } else {
-        if *current_about_window_state == AboutWindowState::Opened {
-            next_about_window_state.set(AboutWindowState::Closed);
+        if *current_window_state == WindowState::Opened {
+            next_window_state.set(WindowState::Closed);
         }
     }
 
     egui::Window::new("About Minesweeper")
     .vscroll(true)
-    .open(&mut is_about_open)
+    .open(&mut ui_local_values.is_about_open)
     .show(ctx, |ui| {
         ui.label("Minesweeper: Clone of a MS Minesweeper");
         ui.group(|ui| {
@@ -101,6 +118,36 @@ pub fn ui_system(
         });
         ui.group(|ui| {
             ui.label("Thank you for playing!");
+        });
+
+        if ui_size.width != ui.min_size().x {
+            ui_size.width = ui.min_size().x;
+        }
+
+        if ui_size.height != ui.min_size().y {
+            ui_size.height = ui.min_size().y;
+        }
+    });
+
+    if ui_local_values.is_ranking_open {
+        next_info_menu_state.set(MenuInfoState::Opened);
+        if *current_window_state == WindowState::Closed {
+            next_window_state.set(WindowState::Opened);
+        }
+    } else {
+        if *current_window_state == WindowState::Opened {
+            next_window_state.set(WindowState::Closed);
+        }
+    }
+    
+    egui::Window::new("Ranking")
+    .vscroll(true)
+    .open(&mut ui_local_values.is_ranking_open)
+    .show(ctx, |ui| {
+        ui.horizontal(|ui| {
+            ui.selectable_value(&mut *ranking_difficulty, Difficulty::Easy, "easy");
+            ui.selectable_value(&mut *ranking_difficulty, Difficulty::Normal, "normal");
+            ui.selectable_value(&mut *ranking_difficulty, Difficulty::Hard, "hard");
         });
 
         if ui_size.width != ui.min_size().x {
@@ -184,14 +231,20 @@ pub fn ui_system(
 
             let info_menu = egui::menu::menu_button(ui, "Info", |ui| {
                 if ui.button("About").clicked() {
-                    *is_about_open = true;
+                    ui_local_values.is_about_open = true;
+                    ui.close_menu();
+                    next_info_menu_state.set(MenuInfoState::Closed);
+                }
+
+                if ui.button("Ranking").clicked() {
+                    ui_local_values.is_ranking_open = true;
                     ui.close_menu();
                     next_info_menu_state.set(MenuInfoState::Closed);
                 }
             });
 
             info_menu.response.clicked_by(PointerButton::Primary).then(|| {
-                if *current_info_menu_state == MenuInfoState::Opened && !*is_about_open {
+                if *current_info_menu_state == MenuInfoState::Opened && (!ui_local_values.is_about_open && !ui_local_values.is_ranking_open) {
                     next_info_menu_state.set(MenuInfoState::Closed);
                 } else {
                     next_info_menu_state.set(MenuInfoState::Opened);
@@ -199,7 +252,7 @@ pub fn ui_system(
             });
 
             info_menu.response.clicked_elsewhere().then(|| {
-                if *current_info_menu_state == MenuInfoState::Opened && !*is_about_open {
+                if *current_info_menu_state == MenuInfoState::Opened && (!ui_local_values.is_about_open && !ui_local_values.is_ranking_open) {
                     next_info_menu_state.set(MenuInfoState::Closed);
                 }
             });
