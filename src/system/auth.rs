@@ -29,12 +29,22 @@ impl Default for Config {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn load_config_file(
     mut config: ResMut<Config>,
 ) {
     let config_from_yaml = load_yaml_from_file::<Config>("config.yaml");
     config.client_id = config_from_yaml.client_id;
     config.redirect_uri = config_from_yaml.redirect_uri;
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn load_config_file(
+    mut config: ResMut<Config>,
+) {
+    // TODO: load from wasm config
+    config.client_id = "".to_string();
+    config.redirect_uri = "".to_string();
 }
 
 pub fn initiate_google_login(config: &Config, uuid: &str) {
