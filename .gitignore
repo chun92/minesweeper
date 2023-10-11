@@ -21,6 +21,7 @@ firebase-debug.log
 
 # config files
 assets/yaml/*.yaml
+out/config.js
 
 # key
 key/*

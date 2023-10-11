@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use serde::{Serialize, Deserialize};
 
-use crate::utils::yaml::load_yaml_from_file;
 pub struct AuthPlugin;
 
 impl Plugin for AuthPlugin {
@@ -33,6 +32,7 @@ impl Default for Config {
 pub fn load_config_file(
     mut config: ResMut<Config>,
 ) {
+    use crate::utils::yaml::load_yaml_from_file;
     let config_from_yaml = load_yaml_from_file::<Config>("config.yaml");
     config.client_id = config_from_yaml.client_id;
     config.redirect_uri = config_from_yaml.redirect_uri;
@@ -43,8 +43,8 @@ pub fn load_config_file(
     mut config: ResMut<Config>,
 ) {
     // TODO: load from wasm config
-    config.client_id = "".to_string();
-    config.redirect_uri = "".to_string();
+    config.client_id = "687056820470-5ujnqbk4pblq6huvl7nb42ggmi24dt8h.apps.googleusercontent.com".to_string();
+    config.redirect_uri = "https://oauth-6kvyjc5h2a-uc.a.run.app".to_string();
 }
 
 pub fn initiate_google_login(config: &Config, uuid: &str) {

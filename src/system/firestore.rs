@@ -1,13 +1,9 @@
 use bevy::prelude::*;
 use std::sync::{Arc, Mutex};
-use serde::{Deserialize, Serialize};
-use chrono::Utc;
 
 use crate::system::uuid::UuidResource;
 use crate::system::difficulty;
 
-const LOGIN_COLLECTION: &str = "login";
-const RANKING_COLLECTION: &str = "ranking";
 pub struct FirestorePlugin;
 
 #[derive(Resource)]
@@ -31,9 +27,13 @@ pub mod platform {
     use firestore::*;
     use bevy_tokio_tasks::TokioTasksRuntime;
     use bevy_tokio_tasks::TaskContext;
+    use serde::{Deserialize, Serialize};
+    use chrono::Utc;
 
     pub const PROJECT_ID: &str = "minesweeper-86284";
     const TARGET_ID_BY_DOC_IDS: FirestoreListenerTarget = FirestoreListenerTarget::new(17_u32);
+    const LOGIN_COLLECTION: &str = "login";
+    const RANKING_COLLECTION: &str = "ranking";
 
     impl Plugin for FirestorePlugin {
         fn build(&self, app: &mut App) {
@@ -210,13 +210,85 @@ pub mod platform {
 pub mod platform {
     use super::*;
     use bevy_wasm_tasks::WASMTasksPlugin;
+    use bevy_wasm_tasks::WASMTasksRuntime;
 
     pub const PROJECT_ID: &str = "minesweeper-86284";
     impl Plugin for FirestorePlugin {
         fn build(&self, app: &mut App) {
             app
                 .add_plugins(WASMTasksPlugin)
-                .init_resource::<LoginDone>();
+                .init_resource::<LoginDone>()
+                .add_systems(Startup, init_firestore)
+                .add_systems(OnEnter(crate::system::state::GameState::Win), add_ranking);
+        }
+    }
+    
+    use wasm_bindgen::prelude::*;
+    use js_sys::JsString;
+    use wasm_bindgen_futures::JsFuture;
+
+    #[wasm_bindgen]
+    extern "C" {
+        fn listen_login_js(uuid: JsString) -> js_sys::Promise;
+    }
+
+    pub async fn listen_login(uuid: String, id: Arc<Mutex<Option<String>>>) -> Result<JsValue, JsValue> {
+        let uuid_js = JsString::from(uuid);
+        let promise = listen_login_js(uuid_js);
+        let result = JsFuture::from(promise).await?;
+        info!("listen done: {:?}", result);
+        *id.lock().unwrap() = result.as_string();
+        Ok(result)
+    }
+
+    pub fn init_firestore(
+        runtime: ResMut<WASMTasksRuntime>,
+        login_done: Res<LoginDone>,
+        uuid: Res<UuidResource>,
+    ) {
+        let id = login_done.id.clone();
+        let login_done = login_done.done.clone();
+        let uuid = uuid.uuid.to_string();
+        
+        runtime.spawn_background_task(move |_ctx| async move {      
+            listen_login(uuid, id.clone()).await.expect("call js async failed");
+            let mut login_done = login_done.lock().unwrap();
+            *login_done = true;
+
+            info!("login done: {}", *id.clone().lock().unwrap().as_ref().unwrap());
+        });
+    }
+    
+    #[wasm_bindgen]
+    extern "C" {
+        fn add_ranking_js(id: JsString, time: f32, difficulty: JsString) -> js_sys::Promise;
+    }
+
+    pub async fn add_ranking_to_db(id: String, time: f32, difficulty: String) -> Result<JsValue, JsValue> {
+        let id = JsString::from(id);
+        let difficulty = JsString::from(difficulty);
+        let promise = add_ranking_js(id, time, difficulty);
+        let result = JsFuture::from(promise).await?;
+        Ok(result)
+    }
+
+    pub fn add_ranking(
+        runtime: ResMut<WASMTasksRuntime>,
+        login_done: Res<LoginDone>,
+        difficulty: Res<difficulty::Difficulty>,
+        timer: Res<crate::system::timer::platform::Timer>,
+    ) {
+        let id = login_done.id.clone();
+        let login_done = login_done.done.clone();
+        let time = timer.get_milli_sec() as f32 / 1000.0;
+        let difficulty = difficulty.clone();
+        
+        if login_done.lock().unwrap().clone() {
+            runtime.spawn_background_task(move |_ctx| async move {        
+                add_ranking_to_db(id.lock().unwrap().clone().unwrap(), time, difficulty.to_string()).await.expect("Insert failed");
+            });
+        } else {
+            todo!();
         }
     }
 }
