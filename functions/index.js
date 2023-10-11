@@ -50,7 +50,7 @@ exports.oauth = onRequest(async (request, response) => {
       user_id: email,
       created_at: Timestamp.now(),
     });
-    response.send("Successfully fetched user information");
+    response.send("Successfully login. Please close this window.");
   } catch (error) {
     console.error("Error fetching user information:", error);
     response.status(500).send("Failed to fetch user information");
