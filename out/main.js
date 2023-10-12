@@ -63,4 +63,31 @@ window.add_ranking_js = function(id, time, difficulty) {
     });
 }
 
+window.read_ranking_js = function() {
+    return new Promise((resolve, reject) => {
+        const result = [];
+        try {
+            db.collection("ranking").get().then((querySnapshot) => {
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const currentSeconds = Math.floor(Date.now() / 1000);
+                    const obj = {
+                        id: data.id,
+                        time: data.time,
+                        difficulty: data.difficulty,
+                        created_at: data.created_at ? data.created_at.seconds : currentSeconds
+                    };
+                    result.push(obj);
+                });
+
+                resolve(result);
+            });
+        } catch (e) {
+            console.error("Error read document: ", e);
+            reject(new Error("Error read document"));
+        }
+    })
+}
+
+
 main();

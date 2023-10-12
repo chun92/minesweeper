@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use std::sync::{Arc, Mutex};
+use serde::{Serialize, Deserialize};
 
 use crate::system::uuid::UuidResource;
 use crate::system::difficulty;
@@ -21,13 +22,20 @@ impl Default for LoginDone {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RankingData {
+    id: String,
+    time: f32,
+    difficulty: String,
+    created_at: u64,
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 pub mod platform {
     use super::*;
     use firestore::*;
     use bevy_tokio_tasks::TokioTasksRuntime;
     use bevy_tokio_tasks::TaskContext;
-    use serde::{Deserialize, Serialize};
     use chrono::Utc;
 
     pub const PROJECT_ID: &str = "minesweeper-86284";
@@ -73,7 +81,6 @@ pub mod platform {
         pub difficulty: String,
         pub created_at: firestore::FirestoreTimestamp,
     }
-
 
     pub fn init_firestore(
         runtime: ResMut<TokioTasksRuntime>,
@@ -203,6 +210,37 @@ pub mod platform {
             todo!();
         }
     }
+
+    
+    pub async fn read_ranking(db: Arc<Mutex<Option<FirestoreDb>>>) -> Result<Vec<RankingData>, Box<dyn std::error::Error>> {
+        info!("read ranking start");
+        let firestore_db = {
+            let locked_db = db.lock().unwrap();
+            locked_db.as_ref().ok_or_else(|| Box::<dyn std::error::Error>::from("FirestoreDb is None"))?.clone()
+        };
+
+        let results = firestore_db.fluent()
+            .select()
+            .from(RANKING_COLLECTION)
+            .query()
+            .await?;
+
+        let results = results.iter().map(|doc| {
+            let obj: RankingStructure =
+                FirestoreDb::deserialize_doc_to::<RankingStructure>(doc)
+                    .expect("Deserialized object");
+            RankingData {
+                id: obj.id,
+                time: obj.time,
+                difficulty: obj.difficulty,
+                created_at: obj.created_at.0.timestamp() as u64,
+            }
+        }).collect::<Vec<RankingData>>();
+
+        info!("read ranking done: {:?}", results);
+        
+        Ok(results)
+    }
 }
 
 
@@ -219,13 +257,15 @@ pub mod platform {
                 .add_plugins(WASMTasksPlugin)
                 .init_resource::<LoginDone>()
                 .add_systems(Startup, init_firestore)
-                .add_systems(OnEnter(crate::system::state::GameState::Win), add_ranking);
+                .add_systems(OnEnter(crate::system::state::GameState::Win), add_ranking)
+                .add_systems(OnEnter(crate::system::state::GameState::Win), read_ranking);
         }
     }
     
     use wasm_bindgen::prelude::*;
     use js_sys::JsString;
     use wasm_bindgen_futures::JsFuture;
+    use serde_wasm_bindgen::from_value;
 
     #[wasm_bindgen]
     extern "C" {
@@ -291,4 +331,32 @@ pub mod platform {
             todo!();
         }
     }
+
+    #[wasm_bindgen]
+    extern "C" {
+        fn read_ranking_js() -> js_sys::Promise;
+    }
+
+    pub async fn read_ranking_from_db() -> Result<Vec<RankingData>, JsValue> {
+        let promise = read_ranking_js();
+        let result_jsvalue = JsFuture::from(promise).await?;
+        
+        let result: Vec<RankingData> = from_value(result_jsvalue).map_err(|e| {
+            JsValue::from_str(&format!("Failed to deserialize: {:?}", e))
+        })?;
+        
+        info!("read ranking done: {:?}", result);
+        Ok(result)
+    }
+
+    pub fn read_ranking(
+        runtime: ResMut<WASMTasksRuntime>,
+    ) {
+        runtime.spawn_background_task(|mut ctx| async move {
+            info!("This print executes from a background WASM future");
+            
+            let _result = read_ranking_from_db().await.expect("call js async failed");
+        });
+    }
+
 }
