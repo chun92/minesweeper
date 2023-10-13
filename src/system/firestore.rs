@@ -7,6 +7,16 @@ use crate::system::difficulty;
 
 pub struct FirestorePlugin;
 
+impl Plugin for FirestorePlugin {
+    fn build(&self, app: &mut App) {
+        self.build_default(app);
+        app
+            .init_resource::<LoginDone>()
+            .add_systems(Startup, platform::init_firestore)
+            .add_systems(OnEnter(crate::system::state::GameState::Win), platform::add_ranking);
+    }
+}
+
 #[derive(Resource)]
 pub struct LoginDone{
     pub done: Arc<Mutex<bool>>,
@@ -42,15 +52,12 @@ pub mod platform {
     const TARGET_ID_BY_DOC_IDS: FirestoreListenerTarget = FirestoreListenerTarget::new(17_u32);
     const LOGIN_COLLECTION: &str = "login";
     const RANKING_COLLECTION: &str = "ranking";
-
-    impl Plugin for FirestorePlugin {
-        fn build(&self, app: &mut App) {
+    
+    impl FirestorePlugin {
+        pub fn build_default(&self, app: &mut App) {
             app
                 .add_plugins(bevy_tokio_tasks::TokioTasksPlugin::default())
-                .init_resource::<LoginDone>()
-                .init_resource::<FirestoreResource>()
-                .add_systems(Startup, init_firestore)
-                .add_systems(OnEnter(crate::system::state::GameState::Win), add_ranking);
+                .init_resource::<FirestoreResource>();
         }
     }
 
@@ -251,17 +258,14 @@ pub mod platform {
     use bevy_wasm_tasks::WASMTasksRuntime;
 
     pub const PROJECT_ID: &str = "minesweeper-86284";
-    impl Plugin for FirestorePlugin {
-        fn build(&self, app: &mut App) {
+    
+    impl FirestorePlugin {
+        pub fn build_default(&self, app: &mut App) {
             app
-                .add_plugins(WASMTasksPlugin)
-                .init_resource::<LoginDone>()
-                .add_systems(Startup, init_firestore)
-                .add_systems(OnEnter(crate::system::state::GameState::Win), add_ranking)
-                .add_systems(OnEnter(crate::system::state::GameState::Win), read_ranking);
+                .add_plugins(WASMTasksPlugin);
         }
     }
-    
+
     use wasm_bindgen::prelude::*;
     use js_sys::JsString;
     use wasm_bindgen_futures::JsFuture;
@@ -352,7 +356,7 @@ pub mod platform {
     pub fn read_ranking(
         runtime: ResMut<WASMTasksRuntime>,
     ) {
-        runtime.spawn_background_task(|mut ctx| async move {
+        runtime.spawn_background_task(|_ctx| async move {
             info!("This print executes from a background WASM future");
             
             let _result = read_ranking_from_db().await.expect("call js async failed");
