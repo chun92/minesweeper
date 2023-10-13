@@ -25,7 +25,7 @@ pub enum MenuInfoState {
 
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
-pub enum WindowState {
+pub enum AboutWindowState {
     #[default]
     Closed,
     Opened,

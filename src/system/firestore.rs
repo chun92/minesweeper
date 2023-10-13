@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use std::sync::{Arc, Mutex};
+use std::cmp::Ordering;
 use serde::{Serialize, Deserialize};
+use chrono::{NaiveDateTime, DateTime, Utc};
 
 use crate::system::uuid::UuidResource;
 use crate::system::difficulty;
@@ -14,6 +16,7 @@ impl Plugin for FirestorePlugin {
         self.build_default(app);
         app
             .init_resource::<LoginDone>()
+            .init_resource::<RankingDataResource>()
             .add_state::<DataReadingState>()
             .add_systems(Startup, platform::init_firestore)
             .add_systems(OnEnter(GameState::Win), platform::add_ranking)
@@ -38,11 +41,41 @@ impl Default for LoginDone {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RankingData {
-    id: String,
-    time: f32,
-    difficulty: String,
-    created_at: u64,
+    pub id: String,
+    pub time: f32,
+    pub difficulty: String,
+    pub created_at: u64,
 }
+
+impl RankingData {
+    pub fn timestamp_to_date(&self) -> String {
+        let ts = self.created_at;
+        let naive_datetime = NaiveDateTime::from_timestamp_opt(ts as i64, 0).unwrap();
+        let utc_datetime: DateTime<Utc> = DateTime::from_naive_utc_and_offset(naive_datetime, Utc);
+        utc_datetime.format("%Y-%m-%d").to_string()
+    }
+}
+
+impl PartialOrd for RankingData {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for RankingData {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.time.partial_cmp(&other.time).unwrap_or(Ordering::Equal)
+            .then_with(|| self.created_at.cmp(&other.created_at))
+    }
+}
+
+impl PartialEq for RankingData {
+    fn eq(&self, other: &Self) -> bool {
+        self.time == other.time && self.created_at == other.created_at
+    }
+}
+
+impl Eq for RankingData {}
 
 #[derive(Debug, Resource)]
 pub struct RankingDataResource {
@@ -56,6 +89,18 @@ impl Default for RankingDataResource {
             data: Arc::new(Mutex::new(Vec::new())),
             is_done: Arc::new(Mutex::new(false)),
         }
+    }
+}
+
+impl RankingDataResource {
+    pub fn get_sorted_by_difficulty(&self, difficulty: &str) -> Vec<RankingData> {
+        let lock = self.data.lock().unwrap();
+        let mut sorted_data: Vec<RankingData> = lock.iter().filter(|&item| item.difficulty == difficulty).cloned().collect();
+        
+        sorted_data.sort();
+        
+        sorted_data.truncate(100);
+        sorted_data
     }
 }
 
@@ -262,7 +307,7 @@ pub mod platform {
             }
         }).collect::<Vec<RankingData>>();
 
-        info!("read ranking done: {:?}", results);
+        info!("read ranking done");
         
         Ok(results)
     }
@@ -382,7 +427,7 @@ pub mod platform {
             JsValue::from_str(&format!("Failed to deserialize: {:?}", e))
         })?;
         
-        info!("read ranking done: {:?}", result);
+        info!("read ranking done");
         Ok(result)
     }
 

@@ -3,11 +3,11 @@ use bevy::app::AppExit;
 use bevy_egui::{egui::{self, PointerButton}, EguiContexts, EguiPlugin};
 
 use crate::system::difficulty::Difficulty;
-use crate::system::state::{GameState, MenuGameState, MenuInfoState, WindowState, RankingWindowState};
+use crate::system::state::{GameState, MenuGameState, MenuInfoState, AboutWindowState, RankingWindowState, DataReadingState};
 use crate::system::window::{init_window, init_window_with_ui};
 use crate::system::auth::{Config, initiate_google_login};
 use crate::system::uuid::UuidResource;
-use crate::system::firestore::LoginDone;
+use crate::system::firestore::{LoginDone, RankingDataResource, RankingData};
 
 pub struct EguiMenuPlugin;
 
@@ -27,14 +27,14 @@ impl Plugin for EguiMenuPlugin {
             .init_resource::<IsRankingOpen>()
             .add_state::<MenuGameState>()
             .add_state::<MenuInfoState>()
-            .add_state::<WindowState>()
+            .add_state::<AboutWindowState>()
             .add_state::<RankingWindowState>()
             .add_plugins(EguiPlugin)
             .add_systems(Startup, configure_visuals_system)
             .add_systems(Update, (about_menu, ranking_menu))
             .add_systems(Update, ui_system.after(about_menu).after(ranking_menu))
-            .add_systems(OnEnter(WindowState::Opened), init_window_with_ui)
-            .add_systems(OnEnter(WindowState::Closed), init_window)
+            .add_systems(OnEnter(AboutWindowState::Opened), init_window_with_ui)
+            .add_systems(OnEnter(AboutWindowState::Closed), init_window)
             .add_systems(OnEnter(RankingWindowState::Opened), init_window_with_ui)
             .add_systems(OnEnter(RankingWindowState::Closed), init_window);
     }
@@ -57,20 +57,20 @@ pub fn about_menu(
     mut contexts: EguiContexts,
     mut is_about_open: ResMut<IsAboutOpen>,
     mut next_info_menu_state: ResMut<NextState<MenuInfoState>>,
-    mut next_window_state: ResMut<NextState<WindowState>>,
-    current_window_state: Res<State<WindowState>>,
+    mut next_window_state: ResMut<NextState<AboutWindowState>>,
+    current_window_state: Res<State<AboutWindowState>>,
     mut ui_size: ResMut<UiSize>,
 ) {
     let ctx: &mut egui::Context = contexts.ctx_mut();
 
     if is_about_open.0 {
         next_info_menu_state.set(MenuInfoState::Opened);
-        if *current_window_state == WindowState::Closed {
-            next_window_state.set(WindowState::Opened);
+        if *current_window_state == AboutWindowState::Closed {
+            next_window_state.set(AboutWindowState::Opened);
         }
     } else {
-        if *current_window_state == WindowState::Opened {
-            next_window_state.set(WindowState::Closed);
+        if *current_window_state == AboutWindowState::Opened {
+            next_window_state.set(AboutWindowState::Closed);
         }
     }
 
@@ -115,30 +115,107 @@ pub fn about_menu(
     });
 }
 
+const MY_ID_COLOR: egui::Color32 = egui::Color32::from_rgb(150, 222, 150);
+
+fn display_rankings(ui: &mut egui::Ui, rankings: &Vec<RankingData>, my_id: Option<String>) {
+    egui::ScrollArea::vertical().show(ui, |ui| {
+        for (index, data) in rankings.iter().enumerate() {
+            let is_my_id = match my_id.as_ref() {
+                Some(id) => id == &data.id,
+                None => false,
+            };
+            ui.horizontal(|ui| {
+                ui.vertical(|ui| {
+                    if is_my_id {
+                        ui.colored_label(MY_ID_COLOR, format!("{}", index + 1));
+                    } else {
+                        ui.label(format!("{}", index + 1));
+                    }
+                    ui.set_min_width(30.0);
+                    ui.set_max_width(30.0);
+                });
+                ui.vertical(|ui| {
+                    if is_my_id {
+                        ui.colored_label(MY_ID_COLOR, &data.id);
+                    } else {
+                        ui.label(&data.id);
+                    }
+                    ui.set_min_width(200.0);
+                    ui.set_max_width(200.0);
+                });
+                ui.vertical(|ui| {
+                    if is_my_id {
+                        ui.colored_label(MY_ID_COLOR, format!("{}", data.difficulty));
+                    } else {
+                        ui.label(format!("{}", data.difficulty));
+                    }
+                    ui.set_min_width(50.0);
+                    ui.set_max_width(50.0);
+                });
+                ui.vertical(|ui| {
+                    if is_my_id {
+                        ui.colored_label(MY_ID_COLOR, format!("{:.2}", data.time));
+                    } else {
+                        ui.label(format!("{:.2}", data.time));
+                    }
+                    ui.set_min_width(50.0);
+                    ui.set_max_width(50.0);
+                });
+                ui.vertical(|ui| {
+                    if is_my_id {
+                        ui.colored_label(MY_ID_COLOR, format!("{}", data.timestamp_to_date()));
+                    } else {
+                        ui.label(format!("{}", data.timestamp_to_date()));
+                    }
+                    ui.set_min_width(100.0);
+                    ui.set_max_width(100.0);
+                });
+            });
+        }
+    });
+}
+
+
 pub fn ranking_menu(
     mut contexts: EguiContexts,
     mut is_ranking_open: ResMut<IsRankingOpen>,
     mut ranking_difficulty: Local<Difficulty>,
     mut next_info_menu_state: ResMut<NextState<MenuInfoState>>,
-    mut next_window_state: ResMut<NextState<WindowState>>,
-    current_window_state: Res<State<WindowState>>,
+    current_window_state: Res<State<RankingWindowState>>,
+    mut next_window_state: ResMut<NextState<RankingWindowState>>,
+    current_data_reading_state: ResMut<State<DataReadingState>>,
+    mut next_data_reading_state: ResMut<NextState<DataReadingState>>,
+    ranking_data_resource: Res<RankingDataResource>,
     mut ui_size: ResMut<UiSize>,
+    login_done: Res<LoginDone>,
 ) {
     let ctx: &mut egui::Context = contexts.ctx_mut();
 
+    let data_done = ranking_data_resource.is_done.clone();
+
     if is_ranking_open.0 {
         next_info_menu_state.set(MenuInfoState::Opened);
-        if *current_window_state == WindowState::Closed {
-            next_window_state.set(WindowState::Opened);
+        if *current_window_state == RankingWindowState::Closed {
+            next_window_state.set(RankingWindowState::Opened);
+        }
+
+        if *current_data_reading_state == DataReadingState::Idle {
+            next_data_reading_state.set(DataReadingState::Ready);
         }
     } else {
-        if *current_window_state == WindowState::Opened {
-            next_window_state.set(WindowState::Closed);
+        if *current_window_state == RankingWindowState::Opened {
+            next_window_state.set(RankingWindowState::Closed);
+        }
+
+        if *current_data_reading_state == DataReadingState::Done {
+            next_data_reading_state.set(DataReadingState::Idle);
+            *data_done.lock().unwrap() = false;
         }
     }
+    let is_login_done = *login_done.done.lock().unwrap();
     
     egui::Window::new("Ranking")
-    .vscroll(true)
+    .vscroll(false)
     .open(&mut is_ranking_open.0)
     .show(ctx, |ui| {
         ui.horizontal(|ui| {
@@ -147,13 +224,30 @@ pub fn ranking_menu(
             ui.selectable_value(&mut *ranking_difficulty, Difficulty::Hard, "hard");
         });
 
-        if ui_size.width != ui.min_size().x {
-            ui_size.width = ui.min_size().x;
+        if !*data_done.lock().unwrap() {
+            ui.spinner();
+        } else {
+            let difficulty = match *ranking_difficulty {
+                Difficulty::Easy => "Easy",
+                Difficulty::Normal => "Normal",
+                Difficulty::Hard => "Hard",
+            };
+            let id = if is_login_done {
+                let id = login_done.id.lock().unwrap();
+                if let Some(id) = id.as_ref() {
+                    Some(id.clone())
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            let data = ranking_data_resource.get_sorted_by_difficulty(difficulty);
+            display_rankings(ui, &data, id);
         }
 
-        if ui_size.height != ui.min_size().y {
-            ui_size.height = ui.min_size().y;
-        }
+        ui_size.width = 500.0;
+        ui_size.height = 300.0;
     });
 
 }
