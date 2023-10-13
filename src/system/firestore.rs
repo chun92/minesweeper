@@ -4,6 +4,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::system::uuid::UuidResource;
 use crate::system::difficulty;
+use crate::system::state::{GameState, DataReadingState};
 
 pub const PROJECT_ID: &str = "minesweeper-86284";
 pub struct FirestorePlugin;
@@ -13,8 +14,10 @@ impl Plugin for FirestorePlugin {
         self.build_default(app);
         app
             .init_resource::<LoginDone>()
+            .add_state::<DataReadingState>()
             .add_systems(Startup, platform::init_firestore)
-            .add_systems(OnEnter(crate::system::state::GameState::Win), platform::add_ranking);
+            .add_systems(OnEnter(GameState::Win), platform::add_ranking)
+            .add_systems(OnEnter(DataReadingState::Ready), platform::read_ranking);
     }
 }
 
@@ -39,6 +42,21 @@ pub struct RankingData {
     time: f32,
     difficulty: String,
     created_at: u64,
+}
+
+#[derive(Debug, Resource)]
+pub struct RankingDataResource {
+    pub data: Arc<Mutex<Vec<RankingData>>>,
+    pub is_done: Arc<Mutex<bool>>,
+}
+
+impl Default for RankingDataResource {
+    fn default() -> Self {
+        Self {
+            data: Arc::new(Mutex::new(Vec::new())),
+            is_done: Arc::new(Mutex::new(false)),
+        }
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -219,7 +237,7 @@ pub mod platform {
     }
 
     
-    pub async fn read_ranking(db: Arc<Mutex<Option<FirestoreDb>>>) -> Result<Vec<RankingData>, Box<dyn std::error::Error>> {
+    pub async fn read_ranking_from_db(db: Arc<Mutex<Option<FirestoreDb>>>) -> Result<Vec<RankingData>, Box<dyn std::error::Error>> {
         info!("read ranking start");
         let firestore_db = {
             let locked_db = db.lock().unwrap();
@@ -247,6 +265,24 @@ pub mod platform {
         info!("read ranking done: {:?}", results);
         
         Ok(results)
+    }
+
+    pub fn read_ranking(
+        runtime: ResMut<TokioTasksRuntime>,
+        firestore: Res<FirestoreResource>,
+        data_resource: ResMut<RankingDataResource>,
+        mut next_state: ResMut<NextState<DataReadingState>>,
+    ) {
+        let db = firestore.db.clone();
+        let data_done = data_resource.is_done.clone();
+        let data_resource = data_resource.data.clone();
+        next_state.set(DataReadingState::Done);
+
+        runtime.spawn_background_task(move |_ctx| async move {
+            let result = read_ranking_from_db(db.clone()).await.expect("read_ranking_from_db async failed");
+            *data_resource.lock().unwrap() = result;
+            *data_done.lock().unwrap() = true;
+        });
     }
 }
 
@@ -352,12 +388,17 @@ pub mod platform {
 
     pub fn read_ranking(
         runtime: ResMut<WASMTasksRuntime>,
+        data_resource: ResMut<RankingDataResource>,
+        mut next_state: ResMut<NextState<DataReadingState>>,
     ) {
-        runtime.spawn_background_task(|_ctx| async move {
-            info!("This print executes from a background WASM future");
-            
-            let _result = read_ranking_from_db().await.expect("call js async failed");
+        let data_done = data_resource.is_done.clone();
+        let data_resource = data_resource.data.clone();
+        next_state.set(DataReadingState::Done);
+
+        runtime.spawn_background_task(move |_ctx| async move {
+            let result = read_ranking_from_db().await.expect("call js async failed");
+            *data_resource.lock().unwrap() = result;
+            *data_done.lock().unwrap() = true;
         });
     }
-
 }

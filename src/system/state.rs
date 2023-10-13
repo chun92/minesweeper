@@ -38,6 +38,14 @@ pub enum RankingWindowState {
     Opened,
 }
 
+#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
+pub enum DataReadingState {
+    #[default]
+    Idle,
+    Ready,
+    Done,
+}
+
 pub fn run_if_all_menu_closed(
     game_menu_state: Res<State<MenuGameState>>,
     info_menu_state: Res<State<MenuInfoState>>,
