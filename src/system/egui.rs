@@ -3,7 +3,7 @@ use bevy::app::AppExit;
 use bevy_egui::{egui::{self, PointerButton}, EguiContexts, EguiPlugin};
 
 use crate::system::difficulty::Difficulty;
-use crate::system::state::{GameState, MenuGameState, MenuInfoState, AboutWindowState, RankingWindowState, DataReadingState};
+use crate::system::state::{GameState, MenuGameState, MenuInfoState, AboutWindowState, RankingWindowState, DataReadingState, LoginPopupState};
 use crate::system::window::{init_window, init_window_with_ui};
 use crate::system::auth::{Config, initiate_google_login};
 use crate::system::uuid::UuidResource;
@@ -25,14 +25,15 @@ impl Plugin for EguiMenuPlugin {
             .init_resource::<UiSize>()
             .init_resource::<IsAboutOpen>()
             .init_resource::<IsRankingOpen>()
+            .init_resource::<IsLoginOpen>()
             .add_state::<MenuGameState>()
             .add_state::<MenuInfoState>()
             .add_state::<AboutWindowState>()
             .add_state::<RankingWindowState>()
             .add_plugins(EguiPlugin)
             .add_systems(Startup, configure_visuals_system)
-            .add_systems(Update, (about_menu, ranking_menu))
-            .add_systems(Update, ui_system.after(about_menu).after(ranking_menu))
+            .add_systems(Update, (about_menu, ranking_menu, login_menu))
+            .add_systems(Update, ui_system.after(about_menu).after(ranking_menu).after(login_menu))
             .add_systems(OnEnter(AboutWindowState::Opened), init_window_with_ui)
             .add_systems(OnEnter(AboutWindowState::Closed), init_window)
             .add_systems(OnEnter(RankingWindowState::Opened), init_window_with_ui)
@@ -48,10 +49,55 @@ fn configure_visuals_system(mut contexts: EguiContexts) {
 }
 
 #[derive(Resource, Default)]
+pub struct IsLoginOpen(pub bool);
+
+#[derive(Resource, Default)]
 pub struct IsAboutOpen(pub bool);
 
 #[derive(Resource, Default)]
 pub struct IsRankingOpen(pub bool);
+
+pub fn login_menu(
+    mut contexts: EguiContexts,
+    mut is_login_open: ResMut<IsLoginOpen>,
+    mut next_state: ResMut<NextState<LoginPopupState>>,
+    current_state: Res<State<LoginPopupState>>,
+    config: Res<Config>,
+    uuid: Res<UuidResource>,
+) {
+    let ctx: &mut egui::Context = contexts.ctx_mut();
+
+    if is_login_open.0 {
+        if *current_state == LoginPopupState::Closed {
+            next_state.set(LoginPopupState::Opened);
+        }
+    } else {
+        if *current_state == LoginPopupState::Opened {
+            next_state.set(LoginPopupState::Closed);
+        }
+    }
+
+    let mut button_clicked = false;
+
+    egui::Window::new("Login Popup")
+    .vscroll(true)
+    .open(&mut is_login_open.0)
+    .show(ctx, |ui| {
+        ui.label("Congratulations on your victory");
+        ui.label("Please login to save your score");
+
+        if ui.button("Login").clicked() {
+            let config = &config;
+            let uuid = uuid.uuid.to_string();
+            initiate_google_login(config, uuid.as_str());
+            button_clicked = true;
+        }
+    });
+
+    if button_clicked {
+        is_login_open.0 = false;
+    }
+}
 
 pub fn about_menu(
     mut contexts: EguiContexts,
@@ -288,7 +334,7 @@ pub fn ui_system(
                 } else {
                     if ui.button("Login").clicked() {
                         let config = &config;
-                        let uuid = uuid.uuid.to_string();                    
+                        let uuid = uuid.uuid.to_string();
                         initiate_google_login(config, uuid.as_str());
                         ui.close_menu();
                         next_game_menu_state.set(MenuGameState::Closed);

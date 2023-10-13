@@ -6,7 +6,8 @@ use chrono::{NaiveDateTime, DateTime, Utc};
 
 use crate::system::uuid::UuidResource;
 use crate::system::difficulty;
-use crate::system::state::{GameState, DataReadingState};
+use crate::system::state::{GameState, DataReadingState, LoginPopupState, LoginState};
+use crate::system::egui::IsLoginOpen;
 
 pub const PROJECT_ID: &str = "minesweeper-86284";
 pub struct FirestorePlugin;
@@ -17,10 +18,15 @@ impl Plugin for FirestorePlugin {
         app
             .init_resource::<LoginDone>()
             .init_resource::<RankingDataResource>()
+            .init_resource::<RankingDataTempResource>()
             .add_state::<DataReadingState>()
+            .add_state::<LoginPopupState>()
+            .add_state::<LoginState>()
             .add_systems(Startup, platform::init_firestore)
+            .add_systems(Update, login_check)
             .add_systems(OnEnter(GameState::Win), platform::add_ranking)
-            .add_systems(OnEnter(DataReadingState::Ready), platform::read_ranking);
+            .add_systems(OnEnter(DataReadingState::Ready), platform::read_ranking)
+            .add_systems(OnEnter(LoginState::Done), platform::login_done);
     }
 }
 
@@ -77,6 +83,24 @@ impl PartialEq for RankingData {
 
 impl Eq for RankingData {}
 
+#[derive(Resource)]
+pub struct RankingDataTempResource {
+    pub time: f32,
+    pub difficulty: String,
+    pub saved: bool,
+}
+
+impl Default for RankingDataTempResource {
+    fn default() -> Self 
+    {
+        Self {
+            time: 0.0,
+            difficulty: difficulty::Difficulty::Hard.to_string(),
+            saved: false,
+        }
+    }
+}
+
 #[derive(Debug, Resource)]
 pub struct RankingDataResource {
     pub data: Arc<Mutex<Vec<RankingData>>>,
@@ -101,6 +125,18 @@ impl RankingDataResource {
         
         sorted_data.truncate(100);
         sorted_data
+    }
+}
+
+pub fn login_check(
+    login_done: Res<LoginDone>,
+    current_state: Res<State<LoginState>>,
+    mut next_state: ResMut<NextState<LoginState>>
+) {
+    let login_done = login_done.done.clone();
+    let login_done = login_done.lock().unwrap();
+    if *login_done && *current_state == LoginState::Not {
+        next_state.set(LoginState::Done);
     }
 }
 
@@ -163,10 +199,10 @@ pub mod platform {
         let login_done = login_done.done.clone();
         let uuid = uuid.uuid.to_string();
         
-        runtime.spawn_background_task(|mut ctx| async move {
+        runtime.spawn_background_task(move |mut ctx| async move {
             init(db.clone()).await.expect("Init and Listen failed");
             listen_login(db.clone(), uuid.as_str(), &mut ctx, id.clone()).await.expect("Init and Listen failed");
-            let mut login_done = login_done.lock().unwrap();
+            let mut login_done: std::sync::MutexGuard<'_, bool> = login_done.lock().unwrap();
             *login_done = true;
 
             info!("login done: {}", *id.clone().lock().unwrap().as_ref().unwrap());
@@ -241,12 +277,41 @@ pub mod platform {
         Ok(())
     }
 
+    pub async fn add_ranking_to_db(
+        db: Arc<Mutex<Option<FirestoreDb>>>,
+        id: Arc<Mutex<Option<String>>>,
+        time: f32,
+        difficulty: String,
+    ) { 
+        let firestore_db = {
+            let locked_db = db.lock().unwrap();
+            locked_db.as_ref().ok_or_else(|| Box::<dyn std::error::Error>::from("FirestoreDb is None")).expect("Firestore Db Initialize Exception").clone()
+        };
+
+        let ranking_structure = RankingStructure {
+            id: id.lock().unwrap().clone().unwrap(),
+            time: time,
+            difficulty: difficulty,
+            created_at: firestore::FirestoreTimestamp(Utc::now()),
+        };
+
+        let _object_returned: RankingStructure = firestore_db.fluent()
+            .insert()
+            .into(RANKING_COLLECTION)
+            .generate_document_id()
+            .object(&ranking_structure)
+            .execute()
+            .await.expect("Insert failed");
+    }
+
     pub fn add_ranking(
         runtime: ResMut<TokioTasksRuntime>,
         firestore: Res<FirestoreResource>,
         login_done: Res<LoginDone>,
         difficulty: Res<difficulty::Difficulty>,
         timer: Res<crate::system::timer::platform::Timer>,
+        mut ranking_data_temp: ResMut<RankingDataTempResource>,
+        mut is_login_open: ResMut<IsLoginOpen>,
     ) {
         let db = firestore.db.clone();
         let id = login_done.id.clone();
@@ -255,32 +320,37 @@ pub mod platform {
         let difficulty = difficulty.clone();
         
         if login_done.lock().unwrap().clone() {
-            runtime.spawn_background_task(move |_ctx| async move {        
-                let firestore_db = {
-                    let locked_db = db.lock().unwrap();
-                    locked_db.as_ref().ok_or_else(|| Box::<dyn std::error::Error>::from("FirestoreDb is None")).expect("Firestore Db Initialize Exception").clone()
-                };
-
-                let ranking_structure = RankingStructure {
-                    id: id.lock().unwrap().clone().unwrap(),
-                    time: time,
-                    difficulty: difficulty.to_string(),
-                    created_at: firestore::FirestoreTimestamp(Utc::now()),
-                };
-
-                let _object_returned: RankingStructure = firestore_db.fluent()
-                    .insert()
-                    .into(RANKING_COLLECTION)
-                    .generate_document_id()
-                    .object(&ranking_structure)
-                    .execute()
-                    .await.expect("Insert failed");
+            runtime.spawn_background_task(move |_ctx| async move {     
+                add_ranking_to_db(db, id, time, difficulty.to_string()).await;
             });
         } else {
-            todo!();
+            *ranking_data_temp = RankingDataTempResource {
+                time: time,
+                difficulty: difficulty.to_string(),
+                saved: true,
+            };
+            *is_login_open = IsLoginOpen(true);
         }
     }
 
+    pub fn login_done(
+        runtime: ResMut<TokioTasksRuntime>,
+        firestore: Res<FirestoreResource>,
+        login_done: Res<LoginDone>,
+        ranking_data_temp: Res<RankingDataTempResource>
+    ) {
+        let has_temp = ranking_data_temp.saved;
+        if has_temp {
+            info!("login done with temp data");
+            let db = firestore.db.clone();
+            let id = login_done.id.clone();
+            let time = ranking_data_temp.time;
+            let difficulty = ranking_data_temp.difficulty.clone();
+            runtime.spawn_background_task(move |_ctx| async move {     
+                add_ranking_to_db(db, id, time, difficulty).await;
+            });
+        }
+    }
     
     pub async fn read_ranking_from_db(db: Arc<Mutex<Option<FirestoreDb>>>) -> Result<Vec<RankingData>, Box<dyn std::error::Error>> {
         info!("read ranking start");
@@ -399,6 +469,8 @@ pub mod platform {
         login_done: Res<LoginDone>,
         difficulty: Res<difficulty::Difficulty>,
         timer: Res<crate::system::timer::platform::Timer>,
+        mut ranking_data_temp: ResMut<RankingDataTempResource>,
+        mut is_login_open: ResMut<IsLoginOpen>,
     ) {
         let id = login_done.id.clone();
         let login_done = login_done.done.clone();
@@ -410,7 +482,30 @@ pub mod platform {
                 add_ranking_to_db(id.lock().unwrap().clone().unwrap(), time, difficulty.to_string()).await.expect("Insert failed");
             });
         } else {
-            todo!();
+            *ranking_data_temp = RankingDataTempResource {
+                time: time,
+                difficulty: difficulty.to_string(),
+                saved: true,
+            };
+            *is_login_open = IsLoginOpen(true);
+        }
+    }
+    
+    pub fn login_done(
+        runtime: ResMut<WASMTasksRuntime>,
+        login_done: Res<LoginDone>,
+        ranking_data_temp: Res<RankingDataTempResource>
+    ) {
+        let has_temp = ranking_data_temp.saved;
+        if has_temp {
+            info!("login done with temp data");
+            let id = login_done.id.clone();
+            let time = ranking_data_temp.time;
+            let difficulty = ranking_data_temp.difficulty.clone();
+            
+            runtime.spawn_background_task(move |_ctx| async move {        
+                add_ranking_to_db(id.lock().unwrap().clone().unwrap(), time, difficulty).await.expect("Insert failed");
+            });
         }
     }
 
