@@ -225,6 +225,7 @@ fn display_rankings(ui: &mut egui::Ui, rankings: &Vec<RankingData>, my_id: Optio
 pub fn ranking_menu(
     mut contexts: EguiContexts,
     mut is_ranking_open: ResMut<IsRankingOpen>,
+    current_difficulty: Res<Difficulty>,
     mut ranking_difficulty: Local<Difficulty>,
     mut next_info_menu_state: ResMut<NextState<MenuInfoState>>,
     current_window_state: Res<State<RankingWindowState>>,
@@ -243,6 +244,7 @@ pub fn ranking_menu(
         next_info_menu_state.set(MenuInfoState::Opened);
         if *current_window_state == RankingWindowState::Closed {
             next_window_state.set(RankingWindowState::Opened);
+            *ranking_difficulty = *current_difficulty;
         }
 
         if *current_data_reading_state == DataReadingState::Idle {
