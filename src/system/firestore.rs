@@ -5,6 +5,7 @@ use serde::{Serialize, Deserialize};
 use crate::system::uuid::UuidResource;
 use crate::system::difficulty;
 
+pub const PROJECT_ID: &str = "minesweeper-86284";
 pub struct FirestorePlugin;
 
 impl Plugin for FirestorePlugin {
@@ -48,7 +49,6 @@ pub mod platform {
     use bevy_tokio_tasks::TaskContext;
     use chrono::Utc;
 
-    pub const PROJECT_ID: &str = "minesweeper-86284";
     const TARGET_ID_BY_DOC_IDS: FirestoreListenerTarget = FirestoreListenerTarget::new(17_u32);
     const LOGIN_COLLECTION: &str = "login";
     const RANKING_COLLECTION: &str = "ranking";
@@ -256,8 +256,10 @@ pub mod platform {
     use super::*;
     use bevy_wasm_tasks::WASMTasksPlugin;
     use bevy_wasm_tasks::WASMTasksRuntime;
-
-    pub const PROJECT_ID: &str = "minesweeper-86284";
+    use wasm_bindgen::prelude::*;
+    use js_sys::JsString;
+    use wasm_bindgen_futures::JsFuture;
+    use serde_wasm_bindgen::from_value;
     
     impl FirestorePlugin {
         pub fn build_default(&self, app: &mut App) {
@@ -265,11 +267,6 @@ pub mod platform {
                 .add_plugins(WASMTasksPlugin);
         }
     }
-
-    use wasm_bindgen::prelude::*;
-    use js_sys::JsString;
-    use wasm_bindgen_futures::JsFuture;
-    use serde_wasm_bindgen::from_value;
 
     #[wasm_bindgen]
     extern "C" {
