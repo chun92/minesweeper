@@ -40,7 +40,7 @@ jobs:
       - name: Set environment variable from GitHub Secret
         run: echo "export const FIREBASECONFIG = '${{ secrets.GITHUB_TOKEN }}';" > ./out/firebaseConfig.js
       - name: Check created file
-        run: ls -l ./out
+        run: ls -l ./out && cat ./out/firebaseConfig.js
 
   # Deployment job
   deploy:
