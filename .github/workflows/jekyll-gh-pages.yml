@@ -28,6 +28,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Set environment variable from GitHub Secret
+        run: echo "export const FIREBASECONFIG = $FIREBASECONFIG;" > ./out/firebaseConfig.js
+        env:
+          FIREBASECONFIG: ${{ secrets.FIREBASECONFIG }}
+      - name: Check created file
+        run: ls -l ./out && cat ./out/firebaseConfig.js
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Build with Jekyll
@@ -37,12 +43,6 @@ jobs:
           destination: ./_site
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
-      - name: Set environment variable from GitHub Secret
-        run: echo "export const FIREBASECONFIG = $FIREBASECONFIG;" > ./out/firebaseConfig.js
-        env:
-          FIREBASECONFIG: ${{ secrets.FIREBASECONFIG }}
-      - name: Check created file
-        run: ls -l ./out && cat ./out/firebaseConfig.js
 
   # Deployment job
   deploy:
