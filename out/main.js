@@ -1,5 +1,6 @@
 import initSync from './minesweeper.js';
-const encodedValue  = process.env.REACT_APP_FIREBASECONFIG;
+import { FIREBASECONFIG } from './firebaseConfig.js';
+const encodedValue  = FIREBASECONFIG;
 const decodedString = atob(encodedValue);
 const firebaseConfig = JSON.parse(decodedString);
 console.log(firebaseConfig);
