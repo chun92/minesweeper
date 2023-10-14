@@ -29,9 +29,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Set environment variable from GitHub Secret
-        run: echo 'export const FIREBASECONFIG = "${FIREBASECONFIG}";' > ./out/firebaseConfig.js
+        run: echo "export const FIREBASECONFIG = \"$FIREBASECONFIG\";" > ./out/firebaseConfig.js
         env:
-          FIREBASECONFIG: ${{ secrets.FIREBASECONFIG }}\
+          FIREBASECONFIG: ${{ secrets.FIREBASECONFIG }}
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Build with Jekyll
