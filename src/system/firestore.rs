@@ -117,14 +117,29 @@ impl Default for RankingDataResource {
 }
 
 impl RankingDataResource {
-    pub fn get_sorted_by_difficulty(&self, difficulty: &str) -> Vec<RankingData> {
+    pub fn get_sorted_by_difficulty(&self, difficulty: &str, is_show_my_ranking: bool, id: Option<String>) -> (Vec<RankingData>, usize) {
         let lock = self.data.lock().unwrap();
         let mut sorted_data: Vec<RankingData> = lock.iter().filter(|&item| item.difficulty == difficulty).cloned().collect();
         
         sorted_data.sort();
-        
-        sorted_data.truncate(100);
-        sorted_data
+        if is_show_my_ranking && id.is_some() {
+            let id = id.clone();
+            let id = id.unwrap();
+            if let Some(index) = sorted_data.iter().position(|item| item.id == id) {
+                let start = if index < 9 { 0 } else { index - 9 };
+                let end = usize::min(start + 20, sorted_data.len());
+
+                let truncated_data = sorted_data[start..end].to_vec();
+
+                return (truncated_data, start + 1);
+            } else {
+                sorted_data.truncate(100);
+                (sorted_data, 1)
+            }
+        } else {
+            sorted_data.truncate(100);
+            (sorted_data, 1)
+        }
     }
 }
 

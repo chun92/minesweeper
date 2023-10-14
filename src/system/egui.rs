@@ -163,7 +163,7 @@ pub fn about_menu(
 
 const MY_ID_COLOR: egui::Color32 = egui::Color32::from_rgb(150, 222, 150);
 
-fn display_rankings(ui: &mut egui::Ui, rankings: &Vec<RankingData>, my_id: Option<String>) {
+fn display_rankings(ui: &mut egui::Ui, rankings: &Vec<RankingData>, my_id: Option<String>, offset: usize) {
     egui::ScrollArea::vertical().show(ui, |ui| {
         for (index, data) in rankings.iter().enumerate() {
             let is_my_id = match my_id.as_ref() {
@@ -173,9 +173,9 @@ fn display_rankings(ui: &mut egui::Ui, rankings: &Vec<RankingData>, my_id: Optio
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
                     if is_my_id {
-                        ui.colored_label(MY_ID_COLOR, format!("{}", index + 1));
+                        ui.colored_label(MY_ID_COLOR, format!("{}", index + offset));
                     } else {
-                        ui.label(format!("{}", index + 1));
+                        ui.label(format!("{}", index + offset));
                     }
                     ui.set_min_width(30.0);
                     ui.set_max_width(30.0);
@@ -227,6 +227,7 @@ pub fn ranking_menu(
     mut is_ranking_open: ResMut<IsRankingOpen>,
     current_difficulty: Res<Difficulty>,
     mut ranking_difficulty: Local<Difficulty>,
+    mut is_show_my_ranking: Local<bool>,
     mut next_info_menu_state: ResMut<NextState<MenuInfoState>>,
     current_window_state: Res<State<RankingWindowState>>,
     mut next_window_state: ResMut<NextState<RankingWindowState>>,
@@ -270,6 +271,8 @@ pub fn ranking_menu(
             ui.selectable_value(&mut *ranking_difficulty, Difficulty::Easy, "easy");
             ui.selectable_value(&mut *ranking_difficulty, Difficulty::Normal, "normal");
             ui.selectable_value(&mut *ranking_difficulty, Difficulty::Hard, "hard");
+
+            ui.checkbox(&mut is_show_my_ranking, "Show My Ranking");
         });
 
         if !*data_done.lock().unwrap() {
@@ -290,8 +293,8 @@ pub fn ranking_menu(
             } else {
                 None
             };
-            let data = ranking_data_resource.get_sorted_by_difficulty(difficulty);
-            display_rankings(ui, &data, id);
+            let (data, offset) = ranking_data_resource.get_sorted_by_difficulty(difficulty, *is_show_my_ranking, id.clone());
+            display_rankings(ui, &data, id, offset);
         }
 
         ui_size.width = 500.0;
