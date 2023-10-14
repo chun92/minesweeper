@@ -37,10 +37,6 @@ jobs:
           destination: ./_site
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
-      - name: Set environment variable from GitHub Secret
-        run: echo "export const FIREBASECONFIG = '${{ secrets.GITHUB_TOKEN }}';" > ./out/firebaseConfig.js
-      - name: Check created file
-        run: ls -l ./out && cat ./out/firebaseConfig.js
 
   # Deployment job
   deploy:
@@ -50,6 +46,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Set environment variable from GitHub Secret
+        run: echo "export const FIREBASECONFIG = '${{ secrets.FIREBASECONFIG }}';" > ./out/firebaseConfig.js
+      - name: Check created file
+        run: ls -l ./out && cat ./out/firebaseConfig.js
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
