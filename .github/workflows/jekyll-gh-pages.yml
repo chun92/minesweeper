@@ -41,7 +41,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
       - name: Set environment variable from GitHub Secret
-        run: echo "export const FIREBASECONFIG = '${{ secrets.GITHUB_TOKEN }}';" > ./out/firebaseConfig.js
+        run: echo "export const FIREBASECONFIG = '${{ secrets.FIREBASECONFIG }}';" > ./out/firebaseConfig.js
       - name: Check created file
         run: ls -l ./out && cat ./out/firebaseConfig.js
 
