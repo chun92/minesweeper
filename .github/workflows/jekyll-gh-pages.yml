@@ -24,9 +24,6 @@ concurrency:
 jobs:
   # Build job
   build:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -41,7 +38,9 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
       - name: Set environment variable from GitHub Secret
-        run: echo "export const FIREBASECONFIG = '${{ secrets.FIREBASECONFIG }}';" > ./out/firebaseConfig.js
+        run: echo "export const FIREBASECONFIG = $FIREBASECONFIG;" > ./out/firebaseConfig.js
+        env:
+          FIREBASECONFIG: ${{ secrets.FIREBASECONFIG }}
       - name: Check created file
         run: ls -l ./out && cat ./out/firebaseConfig.js
 
