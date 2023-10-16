@@ -266,9 +266,11 @@ pub mod platform {
                     FirestoreListenEvent::DocumentChange(ref doc_change) => {
                         info!("Doc changed: {:?}", doc_change);
                         if let Some(doc) = &doc_change.document {
-                            let obj: LoginStructure =
-                                FirestoreDb::deserialize_doc_to::<LoginStructure>(doc)
-                                    .expect("Deserialized object");
+                            let obj = FirestoreDb::deserialize_doc_to::<LoginStructure>(doc);
+                            if obj.is_err() {
+                                return Ok(());
+                            }
+                            let obj = obj.unwrap();
                             info!("As object: {:?}", obj);
                             *wait_done.lock().unwrap() = true;
                             *id.lock().unwrap() = Some(obj.user_id.clone());
@@ -381,14 +383,30 @@ pub mod platform {
             .await?;
 
         let results = results.iter().map(|doc| {
-            let obj: RankingStructure =
-                FirestoreDb::deserialize_doc_to::<RankingStructure>(doc)
-                    .expect("Deserialized object");
+            let obj = FirestoreDb::deserialize_doc_to::<RankingStructure>(doc);
+            if obj.is_err() {
+                return RankingData {
+                    id: String::new(),
+                    time: 0.0,
+                    difficulty: String::new(),
+                    created_at: 0,
+                };
+            }
+
+            let obj = obj.unwrap();
             RankingData {
                 id: obj.id,
                 time: obj.time,
                 difficulty: obj.difficulty,
                 created_at: obj.created_at.0.timestamp() as u64,
+            }
+        }).collect::<Vec<RankingData>>();
+
+        let results = results.iter().filter_map(|item| {
+            if item.created_at == 0 {
+                None
+            } else {
+                Some(item.clone())
             }
         }).collect::<Vec<RankingData>>();
 
