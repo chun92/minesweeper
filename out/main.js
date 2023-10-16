@@ -67,6 +67,22 @@ window.add_ranking_js = function(id, time, difficulty) {
     });
 }
 
+function isValidObject(data) {
+    // id가 string 타입인지 확인
+    const isIdString = typeof data.id === 'string';
+
+    // time이 float인지 확인 (JavaScript에서 모든 숫자는 float로 처리되므로 'number'로 확인)
+    const isTimeFloat = typeof data.time === 'number';
+
+    // difficulty가 string 타입인지 확인
+    const isDifficultyString = typeof data.difficulty === 'string';
+
+    // created_at이 firestore timestamp 타입인지 확인 (toDate 메서드가 존재하는지 확인)
+    const isCreatedAtTimestamp = data.created_at && typeof data.created_at.toDate === 'function';
+
+    return isIdString && isTimeFloat && isDifficultyString && isCreatedAtTimestamp;
+}
+
 window.read_ranking_js = function() {
     return new Promise((resolve, reject) => {
         const result = [];
@@ -75,6 +91,10 @@ window.read_ranking_js = function() {
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     const currentSeconds = Math.floor(Date.now() / 1000);
+                    if (!isValidObject(data)) {
+                        console.error("Invalid object:", data);
+                        return;
+                    }
                     const obj = {
                         id: data.id,
                         time: data.time,
