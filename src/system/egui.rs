@@ -128,7 +128,7 @@ pub fn about_menu(
         ui.group(|ui| {
             ui.horizontal(|ui| {
                 ui.label("Version:");
-                ui.monospace("1.0.0");
+                ui.monospace("1.0.1");
             });
             ui.horizontal(|ui| {
                 ui.label("Developer:");
